@@ -102,6 +102,7 @@
 %}
 
 /* Asociación de operadores y precedencia */
+%left 'COMA'
 %left 'OPERADOR_TERNARIO'
 %left 'OR'
 %left 'AND'
@@ -139,11 +140,11 @@ instruccion
 	: declaracion {$$=$1;}
 	| type {$$=$1;}
 	| R_IF ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE elseIf { $$ = instruccionesAPI.nuevoIf($3, $6, $8);}
-	| R_CONSOLE PUNTO R_LOG ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevoImprimir($5);}
+	| R_CONSOLE PUNTO R_LOG ABRIR_PARENTESIS impresion CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevoImprimir($5);}
 	| R_SWITCH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE cases CERRAR_LLAVE {$$=instruccionesAPI.nuevoSwitch($3, $6);}
 	| R_FOR ABRIR_PARENTESIS for_init expresion PUNTO_COMA IDENTIFICADOR for_change CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE { $$ = instruccionesAPI.nuevoFor($3, $4, {id:$6, paso:$7}, $10);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_OF id CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4, $6, $9);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_IN id CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $6, $9);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_OF expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4, $6, $9);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_IN expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $6, $9);}
 	| R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoWhile($3, $6);}
 	| R_DO ABRIR_LLAVE sentencias CERRAR_LLAVE R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoDoWhile($3, $7);}
 	| R_FUNCTION IDENTIFICADOR ABRIR_PARENTESIS parametros CERRAR_PARENTESIS DOS_PUNTOS tipo ABRIR_LLAVE instrucciones CERRAR_LLAVE {  $$ = instruccionesAPI.nuevaFuncion($7, $2, $4, $9, @2.first_line, @2.first_column); }
@@ -157,7 +158,7 @@ instruccion
 	| id PUNTO_COMA {$$=instruccionesAPI.nuevoAcceso($1);}
 	| R_BREAK PUNTO_COMA{$$=instruccionesAPI.nuevoBreak();}
 	| R_CONTINUE PUNTO_COMA {$$=instruccionesAPI.nuevoContinue();}
-	| R_GRAFICAR_TS ABRIR_PARENTESIS CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoGraficarTS();}
+//	| R_GRAFICAR_TS ABRIR_PARENTESIS CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoGraficarTS();}
 ;
 sentencias
 	: sentencias sentencia { $1.push($2); $$ = $1; }
@@ -165,13 +166,12 @@ sentencias
 ;
 sentencia
 	: declaracion {$$=$1;}
-	//	| type {$$=$1;}
 	| R_IF ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE elseIf { $$ = instruccionesAPI.nuevoIf($3, $6, $8);}
 	| R_CONSOLE PUNTO R_LOG ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevoImprimir($5);}
 	| R_SWITCH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE cases CERRAR_LLAVE {$$=instruccionesAPI.nuevoSwitch($3, $6);}
 	| R_FOR ABRIR_PARENTESIS for_init expresion PUNTO_COMA IDENTIFICADOR for_change CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE { $$ = instruccionesAPI.nuevoFor($3, $4, {id:$6, paso:$7}, $10);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_OF id CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4, $6, $9);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_IN id CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $6, $9);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_OF expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4, $6, $9);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_IN expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $6, $9);}
 	| R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoWhile($3, $6);}
 	| R_DO ABRIR_LLAVE sentencias CERRAR_LLAVE R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoDoWhile($3, $7);}
 	| IDENTIFICADOR ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line);}
@@ -184,7 +184,7 @@ sentencia
 	| id PUNTO_COMA {$$=instruccionesAPI.nuevoAcceso($1, @1.first_column, @1.first_line);}
 	| R_BREAK PUNTO_COMA{$$=instruccionesAPI.nuevoBreak();}
 	| R_CONTINUE PUNTO_COMA {$$=instruccionesAPI.nuevoContinue();}
-	| R_GRAFICAR_TS ABRIR_PARENTESIS CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoGraficarTS();}
+//	| R_GRAFICAR_TS ABRIR_PARENTESIS CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoGraficarTS();}
 ;
 expresion
 	: MENOS expresion %prec UMENOS				{ $$ = instruccionesAPI.nuevaOperacionUnaria($2, TIPO_OPERACION.NEGATIVO); }
@@ -206,7 +206,6 @@ expresion
 	| ABRIR_PARENTESIS expresion CERRAR_PARENTESIS					{ $$ = $2; }
 	| ENTERO											{ $$ = instruccionesAPI.nuevoValor(Number($1), TIPO_VALOR.NUMERO); }
 	| DECIMAL											{ $$ = instruccionesAPI.nuevoValor(Number($1), TIPO_VALOR.DECIMAL); }
-	//	| IDENTIFICADOR										{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR); }
 	| IDENTIFICADOR	ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS { $$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line); }
 	| R_TRUE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.TRUE); }
 	| R_FALSE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.FALSE); }
@@ -216,13 +215,8 @@ expresion
 	| objeto { $$ = instruccionesAPI.nuevoObjeto($1, @1.first_column, @1.first_line); }
 	| ABRIR_CORCHETE arrays CERRAR_CORCHETE  { $$ = instruccionesAPI.nuevoArray($2, @2.first_column, @2.first_line); }
 	| id {$$=instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR);}
-	//	| id PUNTO R_POP ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPop();}
-	//	| id PUNTO R_LENGTH {$$=instruccionesAPI.nuevoLength();}
 	| expresion OPERADOR_TERNARIO expresion DOS_PUNTOS expresion {$$=instruccionesAPI.nuevoOperadorTernario($1, $3, $5);}
 	| R_NULL {$$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.NULL);}
-	//| IDENTIFICADOR ABRIR_CORCHETE expresion CERRAR_CORCHETE array_position {$$=instruccionesAPI.nuevoAccesoAPosicion($1, $3, $5);}
-	//| IDENTIFICADOR array_position PUNTO R_POP ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPop($1, $2);}
-	//| IDENTIFICADOR array_position PUNTO R_LENGTH {$$=instruccionesAPI.nuevoLength($1, $2);}
 ;
 argumentos
 	: expresion argumentos_P {$$ = instruccionesAPI.nuevoArgumento($1, $2, @1.first_column, @1.first_line);}
@@ -245,18 +239,9 @@ listaID
 	: COMA IDENTIFICADOR definicion_tipo definicion listaID {$$=instruccionesAPI.nuevoID($2,$3, $4,$5, @2.first_line, @2.first_column);}
 	| {$$="Epsilon";}
 ;
-//se deja el error de no inicializar una const para el análisis semántico
-listaIDConst
-	: COMA IDENTIFICADOR definicion_tipo IGUAL expresion listaID {$$=instruccionesAPI.nuevoID($2, $3, $5, $6);}
-	| {$$="Epsilon";}
-;
 definicion
 	:IGUAL expresion {$$=$2;}
 	| {$$="undefined";}
-;
-//por ahora no se usa aunque se buscará implementar ese manejo de error
-definicion_const
-	: IGUAL expresion {$$=$2;}
 ;
 definicion_tipo
 	: DOS_PUNTOS tipo {$$=$2;}
@@ -284,8 +269,6 @@ obj_atributos_pr
 	: COMA obj_atributos {$$=$2;}
 	| {$$="Epsilon";}
 ;
-/**/
-//try
 arrays
 	:  expresion arrays_pr {$$=instruccionesAPI.nuevoDato($1, $2);}
 	| {$$="Epsilon";}
@@ -309,7 +292,7 @@ type_atributos_pr
 ;
 elseIf
 	: R_ELSE elseIf_P { $$ = $2;}
-	| { $$ = "Epsilon"; }	//NELSE
+	| { $$ = "Epsilon"; }
 ;
 elseIf_P
 	: R_IF ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE elseIf {$$ = instruccionesAPI.nuevoElseIf($3, $6, $8);}
@@ -351,12 +334,41 @@ id
 id_pr
 	: ABRIR_CORCHETE expresion CERRAR_CORCHETE id_pr {$$=instruccionesAPI.nuevoAccPosicion($2, $4, @1.first_column, @1.first_line);}
 	| PUNTO IDENTIFICADOR id_pr {$$=instruccionesAPI.nuevoAccAtributo($2, $3, @2.first_column, @2.first_line);}
-	| PUNTO R_POP ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPop(@2.first_column, @2.first_line);}
+//	| PUNTO R_POP ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPop(@2.first_column, @2.first_line);}
 	| PUNTO R_LENGTH {$$=instruccionesAPI.nuevoLength(@2.first_column, @2.first_line);}
-	| PUNTO R_PUSH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPush($4, @2.first_column, @2.first_line);}
+//	| PUNTO R_PUSH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPush($4, @2.first_column, @2.first_line);}
 	| PUNTO R_CHARAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoCharAt($4, @2.first_column, @2.first_line);}
 	| PUNTO R_TOLOWERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoToLowerCase(@2.first_column, @2.first_line);}
 	| PUNTO R_TOUPPERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoToUpperCase(@2.first_column, @2.first_line);}
 	| PUNTO R_CONCAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoConcat($4, @2.first_column, @2.first_line);}
 	| {$$="Epsilon";}
+;
+impresion
+	:MENOS impresion %prec UMENOS				{ $$ = instruccionesAPI.nuevaOperacionUnaria($2, TIPO_OPERACION.NEGATIVO); }
+	| impresion MAS impresion			{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.SUMA); }
+	| impresion MENOS impresion		{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.RESTA); }
+	| impresion MULTIPLICACION impresion			{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.MULTIPLICACION); }
+	| impresion DIVISION impresion	{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.DIVISION); }
+	| impresion POTENCIA impresion	{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.POTENCIA); }
+	| impresion MODULO impresion	{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.MODULO); }
+    | impresion MAYOR impresion		{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.MAYOR); }
+	| impresion MENOR impresion		{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.MENOR); }
+	| impresion MAYOR_IGUAL impresion	{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.MAYOR_IGUAL); }
+	| impresion MENOR_IGUAL impresion	{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.MENOR_IGUAL); }
+	| impresion IGUALDAD impresion			{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.IGUAL_IGUAL); }
+	| impresion DISTINTO impresion			{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.DISTINTO); }
+	| impresion AND impresion     { $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.AND); }
+	| impresion OR impresion 		{ $$ = instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.OR); }
+	| NOT impresion		{$$ =  instruccionesAPI.nuevaOperacionUnaria($2, TIPO_OPERACION.NOT);}
+	| impresion COMA impresion {$$=instruccionesAPI.nuevaOperacionBinaria($1, $3, TIPO_OPERACION.CONCATENACION);}
+	| ABRIR_PARENTESIS impresion CERRAR_PARENTESIS					{ $$ = $2; }
+	| ENTERO											{ $$ = instruccionesAPI.nuevoValor(Number($1), TIPO_VALOR.NUMERO); }
+	| DECIMAL											{ $$ = instruccionesAPI.nuevoValor(Number($1), TIPO_VALOR.DECIMAL); }
+	| IDENTIFICADOR	ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS { $$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line); }
+	| R_TRUE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.TRUE); }
+	| R_FALSE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.FALSE); }
+	| CADENA											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA); }
+	| CADENA_CHARS { $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA_CHARS); }
+	| id {$$=instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR);}
+	| impresion OPERADOR_TERNARIO impresion DOS_PUNTOS impresion {$$=instruccionesAPI.nuevoOperadorTernario($1, $3, $5);}
 ;

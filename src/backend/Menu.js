@@ -15,7 +15,7 @@ import 'codemirror/mode/javascript/javascript';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/mbo.css';
 import 'codemirror/theme/cobalt.css';
-//import parser from '../backend/gramatica';
+import parser from './gramatica';
 import Dialog from '@material-ui/core/Dialog';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -23,9 +23,9 @@ import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
-//import Traducir from '../backend/Traductor';
+import Desanidar from './desanidar';
 import AccountTreeIcon from '@material-ui/icons/AccountTree';
-//import Ejecutar from '../backend/Interprete';
+import Traducir from './traductor';
 import Tree from 'react-d3-tree';
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -89,7 +89,7 @@ export default function UI() {
     document.getElementById('consola').value="";
     let AST;
     try {
- //       AST = parser.parse(entry);
+        AST = parser.parse(entry);
         console.log(JSON.stringify(AST, null, 2));
         document.getElementById('consola').value=JSON.stringify(AST, null, 2);
         intros.AST=AST;
@@ -100,11 +100,11 @@ export default function UI() {
     }
   } 
   function Translate(){
-//    Traducir(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
+    Desanidar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
   }
   function Interpretar(){
     tablero.innerHTML=document.createElement("div").innerHTML;
- //   Ejecutar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports,  tablero);
+    Traducir(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports,  tablero);
   }
   function prs(AST){
     let temp = {attributes:{} , children:[]};

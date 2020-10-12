@@ -30,7 +30,8 @@ const TIPO_OPERACION = {
     CONDICION: 'CONDICION',
     AND: 'AND',
     OR: 'OR',
-    NOT: 'NOT'
+    NOT: 'NOT',
+    CONCATENACION:'CONCATENACION'
 };
 const SENTENCIAS = {
     CLASE: 'CLASE',
@@ -101,16 +102,16 @@ function nuevaOperacion(operandoIzq, OperandoDer, tipo) {
     }
 }
 
-function crearSimbolo(var_type, id, tipo, valor, ambito, fila, columna) {
+function crearSimbolo(var_type, id, tipo, ambito, fila, columna, direccion) {
     return {
         si:'variable',
         var_type:var_type,
         id: id,
         tipo: tipo,
-        valor: valor,
         ambito:ambito,
         fila:fila,
-        columna:columna
+        columna:columna,
+        direccion:direccion
     }
 }
 
@@ -143,8 +144,8 @@ class TS {
         this._consola=consola;
     }
 
-    agregar(var_type, id, tipo, valor, ambito, fila, columna) {
-        const nuevoSimbolo = crearSimbolo(var_type, id, tipo, valor, ambito, fila, columna);
+    agregar(var_type, id, tipo, ambito, fila, columna, direccion) {
+        const nuevoSimbolo = crearSimbolo(var_type, id, tipo, ambito, fila, columna,direccion);
         this._simbolos.push(nuevoSimbolo);
     }
 
