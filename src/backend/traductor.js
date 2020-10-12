@@ -8,7 +8,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
    printedTable.erEj=salida.ErrArr;
    const tsGlobal = new TS([], consola);
    try {
-        consola.value="int main()\n{\n";
+        consola.value="void main()\n{\n";
         setSalida(salida.Errores);       
         scanForTypes(salida.AST, tsGlobal); 
         scanForFunctions(salida.AST, tsGlobal, "Global");
@@ -25,7 +25,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 throw '>ERROR: Continue fuera de un ciclo.';  
             }
         }
-        consola.value="#include <stdio.h> //Importar para el uso de Printf\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+consola.value+"\n}";
+        consola.value="#include <stdio.h> //Importar para el uso de Printf\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+consola.value+"\nreturn;\n}";
         traduccion.setValue(output);
         console.log(tsGlobal);
         sendTable(tsGlobal);
@@ -426,44 +426,51 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             printedTable.erEj.push({descripcion:'La delcaracion de  la constante '+id+' debe ser inicializada.\n',tipo:"semántico", linea:fila, columna:columna,ambito:ambito});
             throw '>ERROR:La delcaracion de  la constante '+id+' debe ser inicializada.\n';             
         }
+        let heapInit = pilas.heap;
         if(valor!="undefined"){
-            valor=procesarExpresionNumerica(valor, tablaDeSimbolos, ambito);
-           /* if(data_type.tipo=="infer"){
-                data_type=valor.tipo;
-            }else{
-                //compara que está bien el tipo
-                data_type=procesarDataType(data_type);
-            }*/
+            valor=procesarExpresionNumerica(valor, tablaDeSimbolos, ambito, data_type.split("[]")[0]);
         }else{
             if(data_type=="number"){
+                consola.value+="heap[(int)h]=0;\nh=h+1;";
                 valor={valor:0,tipo:"number"};
+                heapPush();
             }else if(data_type=="boolean"){
                 valor={valor:false, tipo:"boolean"};
+                consola.value+="heap[(int)h]=false;\nh=h+1;";
+                heapPush();
             }else{
                 valor={valor:null, tipo:data_type};
+                consola.value+="heap[(int)h]=null;\nh=h+1;";
             }
         }
-        /*if(data_type.tipo=="infer"){
-            data_type="undefined";
-        }else{
-            if(valor=="undefined"){
-                data_type=procesarDataType(data_type);
-            }else if(data_type.split("[]")[0]=="undefined"){
-                //no hay problema, está definido pero es un array sin datos
-            }else if(valor.tipo.split("[]")[0]=="undefined"){
-                //no hay problema, está definido pero es un array sin datos
-            }else*/
         if(data_type!=valor.tipo){  //se descarta la inferencia de tipos
             consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + data_type+".\n";
             printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + data_type,ambito:ambito,tipo:"semántico", linea:fila, columna:columna});
             throw 'ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + data_type;
         }
-      //  }
+        
         //Crear simbolo
-        consola.value+="stack[(int)p]="+ valor.valor+";\np=p+1;\n";
-        tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, stackPush());
+        if(valor.tipo.split("[]").length>1 || tablaDeSimbolos.existe(valor.tipo.split("[]")[0], undefined, "type") || ambito=="Global" || valor.tipo=="string"){
+            //se va  al heap
+            if(valor.tipo=="string"){
+                tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, heapInit);
+            }else if(valor.tipo.split("[]").length>1){
+                if(valor.tipo.split("[]")[0]=="string" || tablaDeSimbolos.existe(valor.tipo.split("[]")[0], undefined, "type")){
+
+                }else{
+                    tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, heapInit);
+                }
+            }else{
+                //consola.value+="heap[(int)h]="+ valor.valor+";\nh=h+1;\n";
+                tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, heapInit);
+            }
+        }else{
+            //se va al stack
+            consola.value+="stack[(int)p]="+ valor.valor+";\np=p+1;\n";
+            tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, stackPush());
+        }
     }
-    function procesarExpresionNumerica(expresion, tablaDeSimbolos, ambito) {
+    function procesarExpresionNumerica(expresion, tablaDeSimbolos, ambito, userType) {
         if (expresion.sentencia === SENTENCIAS.LLAMADA) {
             const valor = procesarLlamada(expresion, tablaDeSimbolos, ambito);
             if(valor.tipo=="void"){
@@ -494,14 +501,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"-"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            return {valor:temporal,tipo:"number", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.MULTIPLICACION) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            return {valor:temporal,tipo:"number", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.DIVISION) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
@@ -509,70 +516,70 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"/"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            return {valor:temporal,tipo:"number", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.POTENCIA) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
 
             let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"/"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
+            return {valor:temporal,tipo:"number", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.MODULO) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"%"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            return {valor:temporal,tipo:"number", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.MAYOR) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+">"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+">="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.MENOR) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"<"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.MENOR_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"<="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.IGUAL_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.DISTINTO) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.AND) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"="+valorIzq+"&&"+valorDer+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_OPERACION.OR) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
@@ -585,33 +592,44 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             
             let temporal = nuevoTemporal();
             consola.value+=temporal+"=!"+valorIzq+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            return {valor:temporal,tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_VALOR.NUMERO) {
-            return {valor:expresion.valor, tipo:"number"};
+            return {valor:expresion.valor, tipo:"number", tamanio:1};
         } else if (expresion.tipo === TIPO_VALOR.DECIMAL) {
-            return {valor:expresion.valor, tipo:"number"};
+            return {valor:expresion.valor, tipo:"number", tamanio:1};
         }else if (expresion.tipo === TIPO_VALOR.TRUE) {
-            return {valor:true, tipo:"boolean"};
+            return {valor:true, tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_VALOR.FALSE) {
-            return {valor:false, tipo:"boolean"};
+            return {valor:false, tipo:"boolean", tamanio:1};
         } else if (expresion.tipo === TIPO_VALOR.IDENTIFICADOR) {
             const valIzq=procesarAccID(expresion.valor, tablaDeSimbolos, ambito);
             return  valIzq.valor;
         } else if (expresion.tipo === TIPO_VALOR.NULL) {
-            return { valor: null, tipo: "undefined" };
-        //} else if (expresion.data_type === TIPO_DATO.ARRAY) {
+            return { valor: null, tipo: "undefined" , tamanio:1};
         } else if (expresion.data_type === TIPO_DATO.ARRAY) {
-            return procesarArray(expresion, tablaDeSimbolos, ambito);
+            return procesarArray(expresion, tablaDeSimbolos, ambito, userType);
         } else if (expresion.tipo.split("[]").length>1){
-            return procesarArray(expresion, tablaDeSimbolos, ambito);
+            return procesarArray(expresion, tablaDeSimbolos, ambito, userType);
         } else if (expresion.tipo === TIPO_DATO.OBJETO) {
-            return procesarObjeto(expresion, tablaDeSimbolos, ambito);
+            return procesarObjeto(expresion, tablaDeSimbolos, ambito, userType);
         } else if (expresion.tipo === TIPO_VALOR.CADENA) {
-            return { valor: expresion.valor, tipo: "string" };
+            let initial = nuevoTemporal();
+            consola.value+=initial+"=h;\n";
+            for(let i =0;i<expresion.valor.length;i++){
+                consola.value+="heap[(int)h]="+ expresion.valor.charCodeAt(i)+";\nh=h+1;\n";
+                heapPush();
+            }
+            consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
+            return { valor: initial, tipo: "string" };
         } else if (expresion.tipo === TIPO_VALOR.CADENA_CHARS) {
-            return { valor: expresion.valor, tipo: "string" };
-        } else if (expresion.tipo === TIPO_VALOR.CADENA_EJECUTABLE) {
-            return { valor: procesarCadenaEjecutable(expresion.valor, tablaDeSimbolos, ambito), tipo: "string" };
+            let initial = nuevoTemporal();
+            consola.value+=initial+"=h;\n";
+            for(let i =0;i<expresion.valor.length;i++){
+                consola.value+="heap[(int)h]="+ expresion.valor.charCodeAt(i)+";\nh=h+1;\n";
+                heapPush();
+            }
+            consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
+            return { valor: initial, tipo: "string" };
         } else if(expresion.tipo===TIPO_DATO.OPERADOR_TERNARIO){
             let logica =  procesarExpresionNumerica(expresion.logica, tablaDeSimbolos, ambito);
             return logica.valor? procesarExpresionNumerica(expresion.result1, tablaDeSimbolos, ambito):procesarExpresionNumerica(expresion.result2, tablaDeSimbolos, ambito);
@@ -622,15 +640,24 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     function procesarArray(arreglo, tablaDeSimbolos, ambito){
         let temporal = [];
         let temp = arreglo.dimension;
-        let type="";
+        let tamanio=0, temporalBegin = contadores.temporales+1;
+        while(temp!="Epsilon"){
+            temp=temp.next_data;
+            consola.value+=nuevoTemporal()+"="+"h+"+tamanio+";\nh=h+1;\n";
+            heapPush();
+            tamanio++;
+        }
+        tamanio=0;
+        temp = arreglo.dimension;
         while(temp!="Epsilon"){
             let valor = procesarExpresionNumerica(temp.dato, tablaDeSimbolos, ambito);
+            consola.value+="heap[(int)t"+(temporalBegin+tamanio)+"]="+valor.valor+";\n";
             temporal.push(valor);
-            type=valor.tipo;
             temp=temp.next_data;
+            tamanio++;
         }
         checkForMultyType(JSON.parse(JSON.stringify(temporal)), tablaDeSimbolos, ambito);
-        return {tipo:getType(temporal)+calcularDimensiones(temporal), valor:temporal};
+        return {tipo:getType(temporal)+calcularDimensiones(temporal), valor:"t"+temporalBegin};
     }
     function checkForMultyType(arreglo, tablaDeSimbolos, ambito){
         arreglo = JSON.parse(JSON.stringify(arreglo));
@@ -671,60 +698,38 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
         return contador;
     }
-    function procesarObjeto(instruccion, tablaDeSimbolos, ambito){
+    function procesarObjeto(instruccion, tablaDeSimbolos, ambito, userType){
+        if(!tablaDeSimbolos.existe(userType, undefined, "type")){
+            printedTable.erEj.push({descripcion:'No existe el type:'+userType+'.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
+            throw '>ERROR: No existe el type:'+userType+'.\n';                       
+        }  
         let attb =[];
         let temp = instruccion.atributos;
         while(temp!="Epsilon"){
-            let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito);
-            attb.push({id:temp.id, valor:valor, tipo:valor.tipo});
+            //let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito);
+            //attb.push({id:temp.id, valor:valor, tipo:valor.tipo});
+            attb.push({id:temp.id});
             temp=temp.next;
         }
-        //buscar type
-        let flag = true;
-        let typeID;
-        for(let type of tablaDeSimbolos._simbolos){
-            if(type.si=="type"){
-                if(type.atributos.length==attb.length){
-                    for(let attribute of attb){
-                        let flag2=true;
-                        for(let atb of type.atributos){
-                            //para que acepte los null;
-                            if(atb.id==attribute.id && atb.tipo==attribute.tipo || atb.id==attribute.id && atb.tipo=="infer" || atb.id==attribute.id && attribute.valor.valor==null || atb.id==attribute.id && attribute.valor.tipo.split("[]")[0]=="undefined" && atb.tipo.split("[]").length>1){
-                                if(attribute.valor.valor==null){
-                                    attribute.tipo=atb.tipo;
-                                }
-                                flag2=true;
-                                break;
-                            }else{
-                                flag2=false;
-                            }
-                        }
-                        if(!flag2){
-                            flag=false;
-                            break;
-                        }else{
-                            //para que lleve muestre la coincidencia de type y objeto
-                            flag=true;
-                        }       
-                    }
-                    if(flag){
-                        typeID=type.id;
-                        break;
-                    }//SE quita la cláusula else para que revise todos los types existentes;
-                    /*else{
-                        consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: No existe ningún type que coincida con el objeto.\n';  
-                        throw '>ERROR: No existe ningún type que coincida con el objeto.\n';                       
-                    } */
-                }
-                
-            }
-        } 
-        if(typeID==undefined){
-            consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: No existe ningún type que coincida con el objeto.\n';  
-            printedTable.erEj.push({descripcion:'No existe ningún type que coincida con el objeto.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
-            throw '>ERROR: No existe ningún type que coincida con el objeto.\n';                       
-        }       
-        return {tipo:typeID, valor:attb};
+        let tipo = tablaDeSimbolos.obtenerType(userType);
+        if(tipo.atributos.length!=attb.length){
+            printedTable.erEj.push({descripcion:'Se deben inicializar todos los atributos del type.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
+            throw '>ERROR: Se deben inicializar todos los atributos del type.\n'; 
+        }
+        temp = instruccion.atributos;
+        let initial = pilas.heap, temporalInit=contadores.temporales+1;
+        //declarar los atributos
+        for(let atb in attb){
+            consola.value+=nuevoTemporal()+"="+"h+"+atb+";\nh=h+1;\n";
+        }
+        //referenciar los atributos
+        while(temp!="Epsilon"){
+            let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito);
+            consola.value+="heap[(int)t"+temporalInit+"]="+valor.valor+";\n";
+            temp=temp.next;
+            temporalInit++;
+        }      
+        return {valor:initial, tipo:userType};
     }
     function ExistingAttribute(typeID, attributeID, tablaDeSimbolos){
         let type = tablaDeSimbolos.obtenerType(typeID);
@@ -1073,9 +1078,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             temp=temp.next_acc;
         }
         return principalValue;
-    }
-    function procesarCadenaEjecutable(cadena, tablaDeSimbolos, ambito){
-        
     }
     //SENTENCIAS DE CONTROL 
     function procesarIf(instruccion, tablaDeSimbolos, ambito) {
