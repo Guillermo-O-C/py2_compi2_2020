@@ -48,8 +48,8 @@
 [0-9]+\b return 'ENTERO';
 ([a-zA-Z])[a-zA-Z0-9_]* return 'IDENTIFICADOR';
 \s+ {}                           //Ignora los espacios en blanco
-"//".*                          return 'COMENTARIO_LINEAL'; // comentario simple línea
-[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/] return 'COMENTARIO_BLOQUE'// comentario multiple líneas
+"//".*                          // comentario simple línea
+[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/] // comentario multiple líneas
 "++" return 'INCREMENTO';
 "--" return 'DECREMENTO';
 "+=" return 'ASIGNACION_SUMA';

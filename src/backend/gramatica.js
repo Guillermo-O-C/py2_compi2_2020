@@ -1051,9 +1051,9 @@ case 41:return 26;
 break;
 case 42:
 break;
-case 43:return 'COMENTARIO_LINEAL'; // comentario simple línea
+case 43:// comentario simple línea
 break;
-case 44:return 'COMENTARIO_BLOQUE'// comentario multiple líneas
+case 44:// comentario multiple líneas
 break;
 case 45:return 42;
 break;

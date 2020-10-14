@@ -102,7 +102,7 @@ function nuevaOperacion(operandoIzq, OperandoDer, tipo) {
     }
 }
 
-function crearSimbolo(var_type, id, tipo, ambito, fila, columna, direccion) {
+function crearSimbolo(var_type, id, tipo, ambito, fila, columna, direcciones) {
     return {
         si:'variable',
         var_type:var_type,
@@ -111,7 +111,7 @@ function crearSimbolo(var_type, id, tipo, ambito, fila, columna, direccion) {
         ambito:ambito,
         fila:fila,
         columna:columna,
-        direccion:direccion
+        direcciones:direcciones
     }
 }
 
@@ -144,8 +144,8 @@ class TS {
         this._consola=consola;
     }
 
-    agregar(var_type, id, tipo, ambito, fila, columna, direccion) {
-        const nuevoSimbolo = crearSimbolo(var_type, id, tipo, ambito, fila, columna,direccion);
+    agregar(var_type, id, tipo, ambito, fila, columna, direcciones) {
+        const nuevoSimbolo = crearSimbolo(var_type, id, tipo, ambito, fila, columna,direcciones);
         this._simbolos.push(nuevoSimbolo);
     }
 
@@ -176,26 +176,6 @@ class TS {
             throw 'ERROR: variable: ' + id + ' no ha sido declarada.';
         }
     }
-    /*
-    actualizar(id, valor, ambito) {
-        for(let amb of ambito){
-            const simbolo = this._simbolos.filter(simbolo => simbolo.id === id && simbolo.ambito == amb && simbolo.si=="variable")[0];
-            if (simbolo.tipo != valor.tipo) {
-                if(simbolo.tipo.split("[]")[0]=="undefined"){
-                    simbolo.tipo=valor.tipo;
-                }else{
-                    this._consola.value+='ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + simbolo.tipo;
-                    throw 'ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + simbolo.tipo;
-                }
-            }
-            if (simbolo){
-                simbolo.valor = valor.valor;
-            }
-        }
-        this._consola.value+='ERROR: variable: ' + id + ' no ha sido declarada.';
-        throw 'ERROR: variable: ' + id + ' no ha sido declarada.';
-    }
-    */
     actualizarAndType(id, valor) {
         const simbolo = this._simbolos.filter(simbolo => simbolo.id === id)[0];
         if (simbolo) simbolo.valor = valor.valor;
@@ -207,7 +187,7 @@ class TS {
         for(let amb of ambito){
             const simbolo = this._simbolos.filter(simbolo => simbolo.id === id && amb==simbolo.ambito && simbolo.si =="variable")[0];
             if (simbolo){
-                return { valor: simbolo.valor, tipo: simbolo.tipo }
+                return { valor: simbolo.direcciones, tipo: simbolo.tipo }
             };
         }
         this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito[0]+'\nERROR: variable: ' + id + ' no ha sido declarada.';

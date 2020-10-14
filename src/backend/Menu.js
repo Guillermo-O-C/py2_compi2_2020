@@ -223,28 +223,42 @@ export default function UI() {
     let text="";
     if(simbolo.tipo.split("[]").length>1){
       text+="[";
-      for(let i = 0;i<simbolo.valor.length;i++){
-          text+=toString(simbolo.valor[i]);
-          if(i!=simbolo.valor.length-1){
+      for(let i = 0;i<simbolo.direcciones.length;i++){
+        if(Array.isArray(simbolo.direcciones[i])){
+          let tipo ="";
+          for(let e =0;e<simbolo.tipo.split("[]").length-1;e++){
+            if(e==0)tipo+=simbolo.tipo.split("[]")[i];
+            else tipo+="[]";
+          }
+          text+=toString({direcciones:simbolo.direcciones[i],tipo:tipo});
+        }else{
+          text+=simbolo.direcciones[i];
+        }
+          if(i!=simbolo.direcciones.length-1){
               text+=", ";
           }
       }
       text+="]";
-    }else if(Array.isArray(simbolo.valor)){
+    }else if(Array.isArray(simbolo.direcciones)){
       text+="{";
-      for(let i = 0;i<simbolo.valor.length;i++){
-        if(simbolo.valor[i].valor.valor!=null){
-          text+=simbolo.valor[i].id+":"+toString(simbolo.valor[i].valor);
+      for(let i = 0;i<simbolo.direcciones.length;i++){
+        if(simbolo.direcciones[i]!=null){
+          text+=simbolo.direcciones[i].id+":";
+          if(Array.isArray(simbolo.direcciones[i].direcciones)){
+            text+=toString(simbolo.direcciones[i].direcciones);
+          }else{
+            text+=simbolo.direcciones[i].direcciones;
+          }
         }else{
-          text+=simbolo.valor[i].id+":null";
+          text+=simbolo.direcciones[i].id+":null";
         }
-        if(i!=simbolo.valor.length-1){
+        if(i!=simbolo.direcciones.length-1){
           text+=", ";
         }
       }
       text+="}";
     }else{
-      text+= simbolo.valor;
+      text+= simbolo.direcciones;
     }
     return text;
   }
@@ -278,7 +292,7 @@ export default function UI() {
     celda03.bgColor="#40a8c4";
     celda04.innerHTML = "Tipo";
     celda04.bgColor="#40a8c4";
-    celda05.innerHTML = "Valor";
+    celda05.innerHTML = "Dirección";
     celda05.bgColor="#40a8c4";
     celda06.innerHTML = "Fila";
     celda06.bgColor="#40a8c4";
@@ -372,7 +386,7 @@ export default function UI() {
         celda2.innerHTML = err.tipo;
         celda3.innerHTML = err.linea;
         celda4.innerHTML = err.columna;
-        celda5.innerHTML = err.descripción;
+        celda5.innerHTML = err.descripcion;
         i++;
       }
     }else{
