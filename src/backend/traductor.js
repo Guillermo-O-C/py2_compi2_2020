@@ -1,7 +1,7 @@
 import { TS, TIPO_DATO, SENTENCIAS, TIPO_VARIABLE, TIPO_OPERACION, TIPO_VALOR, TIPO_ACCESO } from "./instrucciones";
 
 export default function Traucir(salida, consola, traduccion, printedTable, tablero){
-    const contadores = {temporales:0, etiquetas:0};
+    const contadores = {temporales:4, etiquetas:0};
     const pilas = {stack:0, heap:0};
     const stack = [], heap=[];
    let output="";
@@ -495,128 +495,246 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_OPERACION.NEGATIVO) {
             const valor = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito).valor;
             
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"=-"+valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            if(valor.tipo=="number"){
+                let temporal = nuevoTemporal();
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de resta unitaria con el tipo '+valor.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de resta unitaria con el tipo.'; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.SUMA) {
             //si valIzq es string devuleve string else number
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else if(valorIzq.tipo=="number" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"string"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"string"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"string"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.RESTA) {
-            const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
-            const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"-"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+                const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
+                const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"-"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de resta con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de resta con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.MULTIPLICACION) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de multiplicación con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de multiplicación con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.DIVISION) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if (valorDer == 0) throw 'Error: división entre 0 no está definida.';
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"/"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                    /*if (valorDer == 0){
+                    printedTable.erEj.push({descripcion:' No se puede realizar la operación de división con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                    throw 'Error: división entre 0 no está definida.';
+                }*/                
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"/"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de división con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de división con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.POTENCIA) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de potencia con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de potencia con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.MODULO) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"%"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"number"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"%"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de módulo con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de módulo con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.MAYOR) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+">"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+">"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de mayor que con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de mayor que con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+">="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+">="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de mayor o igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de mayor o igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.MENOR) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"<"+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"<"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de menor que con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de menor que  con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.MENOR_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"<="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"<="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de menor igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de menor igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.IGUAL_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de igualdad con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de igualdad con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+            //falta las comparaciones de :
+            /*
+                type - type
+                array - array
+                type - null
+                array - null
+                string - null
+                null - null
+            */
         } else if (expresion.tipo === TIPO_OPERACION.DISTINTO) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de diferenciación con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de diferenciación con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+            //falta las diferenciación de :
+            /*
+                type - type
+                array - array
+                type - null
+                array - null
+                string - null
+                null - null
+            */
         } else if (expresion.tipo === TIPO_OPERACION.AND) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq+"&&"+valorDer+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq+"&&"+valorDer+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de AND con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de AND con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.OR) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+valorIzq+"||"+valorDer+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq+"||"+valorDer+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
         } else if (expresion.tipo === TIPO_OPERACION.NOT) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
-            
-            let temporal = nuevoTemporal();
-            consola.value+=temporal+"=!"+valorIzq+";\n";
-            return {valor:temporal,tipo:"boolean"};
+            if(valorIzq.tipo=="boolean"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=!"+valorIzq+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo; 
+            }
         } else if (expresion.tipo === TIPO_VALOR.NUMERO) {
             return {valor:expresion.valor, tipo:"number"};
         } else if (expresion.tipo === TIPO_VALOR.DECIMAL) {
             return {valor:expresion.valor, tipo:"number"};
         }else if (expresion.tipo === TIPO_VALOR.TRUE) {
-            return {valor:"TRUE", tipo:"boolean"};
+            return {valor:"1", tipo:"boolean"};
         } else if (expresion.tipo === TIPO_VALOR.FALSE) {
-            return {valor:"FALSE", tipo:"boolean"};
+            return {valor:"0", tipo:"boolean"};
         } else if (expresion.tipo === TIPO_VALOR.IDENTIFICADOR) {
             const valIzq=procesarAccID(expresion.valor, tablaDeSimbolos, ambito);
             return  valIzq;
         } else if (expresion.tipo === TIPO_VALOR.NULL) {
-            return { valor: "NULL", tipo: userType , tamanio:1};
+            return { valor: "0", tipo: userType , tamanio:1};
         } else if (expresion.data_type === TIPO_DATO.ARRAY) {
             return procesarArray(expresion, tablaDeSimbolos, ambito, userType);
         } else if (expresion.tipo.split("[]").length>1){
@@ -647,7 +765,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             return { valor: initial, tipo: "string" , direcciones:direcciones};
         } else if(expresion.tipo===TIPO_DATO.OPERADOR_TERNARIO){
             let logica =  procesarExpresionNumerica(expresion.logica, tablaDeSimbolos, ambito);
-            return logica.valor? procesarExpresionNumerica(expresion.result1, tablaDeSimbolos, ambito):procesarExpresionNumerica(expresion.result2, tablaDeSimbolos, ambito);
+            if(logica.tipo=="boolean"){
+                return logica.valor? procesarExpresionNumerica(expresion.result1, tablaDeSimbolos, ambito):procesarExpresionNumerica(expresion.result2, tablaDeSimbolos, ambito);
+            }
         } else {
             throw 'ERROR: expresión numérica no válida: ' + expresion.valor;
         }
@@ -844,9 +964,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }*/
                 //comprobar que la posición no sea más larga que el length de la posición.
                 principalValue = principalValue.valor[valor.valor];
-                if(principalValue==undefined){
-                    return {valor:undefined, tipo:"undefined"};
+                let tipo ="";
+                for(let e =0;e<principalValue.tipo.split("[]").length-1;e++){
+                    if(e==0)tipo+=principalValue.tipo.split("[]")[e];
+                    else tipo+="[]";
                 }
+                principalValue.tipo=tipo;
             }else if(temp.sentencia==SENTENCIAS.LENGTH){//R
                 if(!Array.isArray(principalValue.valor)){
                     // if(principalValue.tipo!=TIPO_DATO.ARRAY){
@@ -1384,7 +1507,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         return txt;
     }
     function funcionesNativas(){
-        let text = "void print(){\nwhile(heap[(int)t0]!=-1){\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\n}\nreturn;\n}";//funcion para imprimir strings
+        //funcion para imprimir strings
+        let text = "void print(){\nwhile(heap[(int)t0]!=-1){\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\n}\nreturn;\n}";
+        //función para concatenar 2 strings
+        text+="void Concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
+        text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}";
         return text;
     }
 }
