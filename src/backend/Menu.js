@@ -23,6 +23,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 import Desanidar from './desanidar';
 import AccountTreeIcon from '@material-ui/icons/AccountTree';
 import Traducir from './traductor';
@@ -480,7 +481,7 @@ export default function UI() {
         </Grid>
       <Grid container spacing={2}>
           <Grid item xs={6}>
-            <Paper className={classes.paper}>CONSOLA</Paper>
+            <Paper className={classes.paper}>CONSOLA<Button startIcon={<FileCopyIcon/>} style={{marginRight:0}}></Button></Paper>
             <textarea disabled id="consola" style={{width:"100%", height:"50vh", resize: "none", backgroundColor:"#0f4c75", color:"#ffff"}} ></textarea>
 
           </Grid> 

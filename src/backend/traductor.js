@@ -49,7 +49,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }
             }else if(instruccion.sentencia === SENTENCIAS.IMPRIMIR){
                 try{
-                    procesarImpresion(instruccion, tablaDeSimbolos, ambito);
+                    procesarImpresion(instruccion.valor, tablaDeSimbolos, ambito);
                 } catch (e) {
                     console.error(e);
                 }
@@ -354,43 +354,328 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         //obtener el valor a cambiar y ver que  no sea const
         //
     }
-    function procesarImpresion(instruccion, tablaDeSimbolos, ambito){
-        const cadena = procesarExpresionNumerica(instruccion.valor, tablaDeSimbolos, ambito);
-                   consola.value += "> " + toString(cadena, tablaDeSimbolos, ambito)+ "\n";
+    function procesarImpresion(expresion, tablaDeSimbolos, ambito){
+        const valores = procesarTexto(expresion, tablaDeSimbolos, ambito);
+        consola.value+=toString(valores);
+    }
+    function procesarTexto(expresion, tablaDeSimbolos, ambito){
+        if (expresion.sentencia === SENTENCIAS.LLAMADA) {
+            const valor = procesarLlamada(expresion, tablaDeSimbolos, ambito);
+            if(valor.tipo=="void"){
+                consola.value+='>f:'+expresion.fila+', c:'+expresion.columna+', ambito:'+ambito+'\nERROR: Función de tipo void como expresión.\n';  
+                printedTable.erEj.push({descripcion:' Función de tipo void como expresión.',tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: Función de tipo void como expresión.'; 
+            }
+            let temporal = nuevoTemporal();
+            consola.value+=temporal+"="+valor+";\n";
+            return {valor:temporal,tipo:"number"};
+        } else if (expresion.tipo === TIPO_OPERACION.NEGATIVO) {
+            const valor = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            
+            if(valor.tipo=="number"){
+                let temporal = nuevoTemporal();
+                return {valor:valor.valor,tipo:"number", direcciones:temporal};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de resta unitaria con el tipo '+valor.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de resta unitaria con el tipo.'; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.SUMA) {
+            //si valIzq es string devuleve string else number
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
+                return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
+            }else if(valorIzq.tipo=="number" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
+                return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="number"){
+                //let temporal = nuevoTemporal();
+                //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:[valorIzq, valorDer],tipo:"string"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
+                //let temporal = nuevoTemporal();
+                //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:[valorIzq, valorDer],tipo:"string"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
+                return {valor:[valorIzq, valorDer],tipo:"string"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.RESTA) {
+                const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+                const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"-"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de resta con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de resta con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.MULTIPLICACION) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de multiplicación con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de multiplicación con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.DIVISION) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                    /*if (valorDer == 0){
+                    printedTable.erEj.push({descripcion:' No se puede realizar la operación de división con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                    throw 'Error: división entre 0 no está definida.';
+                }*/                
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"/"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de división con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de división con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.POTENCIA) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"*"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de potencia con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de potencia con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.MODULO) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"%"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de módulo con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de módulo con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.MAYOR) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+">"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de mayor que con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de mayor que con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+">="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de mayor o igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de mayor o igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.MENOR) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"<"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de menor que con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de menor que  con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.MENOR_IGUAL) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"<="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de menor igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de menor igual con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.IGUAL_IGUAL) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de igualdad con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de igualdad con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+            //falta las comparaciones de :
+            /*
+                type - type
+                array - array
+                type - null
+                array - null
+                string - null
+                null - null
+            */
+        } else if (expresion.tipo === TIPO_OPERACION.DISTINTO) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de diferenciación con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de diferenciación con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+            //falta las diferenciación de :
+            /*
+                type - type
+                array - array
+                type - null
+                array - null
+                string - null
+                null - null
+            */
+        } else if (expresion.tipo === TIPO_OPERACION.AND) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"&&"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de AND con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de AND con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.OR) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"||"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
+            }
+        } else if (expresion.tipo === TIPO_OPERACION.NOT) {
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="boolean"){    
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=!"+valorIzq.valor+";\n";
+                return {valor:temporal,tipo:"boolean"};
+            }else{
+                printedTable.erEj.push({descripcion:' No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo; 
+            }
+        }else if(expresion.tipo ==  TIPO_OPERACION.CONCATENACION){
+            const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
+            const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            return {valor:[valorIzq, valorDer], tipo:"concatenacion"};
+        } else if (expresion.tipo === TIPO_VALOR.NUMERO) {
+            return {valor:[{valor:expresion.valor, tipo:"number"}], tipo:"number"};
+        } else if (expresion.tipo === TIPO_VALOR.DECIMAL) {
+            return {valor:[{valor:expresion.valor, tipo:"number"}], tipo:"number"};
+        }else if (expresion.tipo === TIPO_VALOR.TRUE) {
+            return {valor:[{valor:"1", tipo:"boolean"}], tipo:"boolean"};
+        } else if (expresion.tipo === TIPO_VALOR.FALSE) {
+            return {valor:[{valor:"0", tipo:"boolean"}], tipo:"boolean"};
+        } else if (expresion.tipo === TIPO_VALOR.IDENTIFICADOR) {
+            const valIzq=procesarAccID(expresion.valor, tablaDeSimbolos, ambito);
+            return  {valor:[valIzq], tipo:valIzq.tipo};
+        }else if (expresion.tipo === TIPO_VALOR.CADENA) {
+            let initial = nuevoTemporal();
+            let direcciones = pilas.heap;
+            consola.value+=initial+"=h;\n";
+            let cadenaUpdated =  sustituirEscapes(expresion);
+            for(let i =0;i<cadenaUpdated.length;i++){
+                consola.value+="heap[(int)h]="+ cadenaUpdated.charCodeAt(i)+";\nh=h+1;\n";
+                heapPush();
+            }
+            consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
+            heapPush();
+            return {valor:[{valor:initial, tipo: "string"}], tipo: "string", direcciones:initial};
+        } else if (expresion.tipo === TIPO_VALOR.CADENA_CHARS) {
+            let initial = nuevoTemporal();
+            let direcciones = pilas.heap;
+            consola.value+=initial+"=h;\n";
+            let cadenaUpdated =  sustituirEscapes(expresion);
+            for(let i =0;i<cadenaUpdated.length;i++){
+                consola.value+="heap[(int)h]="+ cadenaUpdated.charCodeAt(i)+";\nh=h+1;\n";
+                heapPush();
+            }
+            consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
+            heapPush();
+            return { valor: [{valor:initial, tipo: "string"}], tipo: "string" , direcciones:initial};
+        } else if(expresion.tipo===TIPO_DATO.OPERADOR_TERNARIO){
+            let logica =  procesarTexto(expresion.logica, tablaDeSimbolos, ambito);
+            if(logica.tipo=="boolean"){
+                return logica.valor? procesarTexto(expresion.result1, tablaDeSimbolos, ambito):procesarTexto(expresion.result2, tablaDeSimbolos, ambito);
+            }
+        } else {
+            throw 'ERROR: expresión numérica no válida: ' + expresion.valor;
+        }
     }
     function toString(cadena, tablaDeSimbolos, ambito){
         let text= "";
-        if(cadena.tipo.split("[]").length>1){
-            text+="[";
-            for(let i = 0;i<cadena.valor.length;i++){
-                text+=toString(cadena.valor[i], tablaDeSimbolos, ambito);
-                if(i!=cadena.valor.length-1){
-                    text+=", ";
-                }
-            }
-            text+="]";
-        }else if(tablaDeSimbolos.existe(cadena.tipo, undefined, "type")){
-            text+="{";
-            if(cadena.valor!=null){
-                for(let i = 0;i<cadena.valor.length;i++){
-                    if(cadena.valor[i].valor.valor!=null){
-                        text+=cadena.valor[i].id+":"+toString(cadena.valor[i].valor, tablaDeSimbolos, ambito);
-                    }else{
-                        text+=cadena.valor[i].id+":null";
-                    }
-                    if(i!=cadena.valor.length-1){
-                        text+=", ";
-                    }
-                }
-            }else{
-                text+="null";
-            }
-            text+="}";
-        }else if(cadena.tipo==="string"){
-            text+=sustituirEscapes(cadena);
+        if(Array.isArray(cadena.valor)){
+            text+=toString(cadena.valor, tablaDeSimbolos, ambito);
         }else{
-            text+=cadena.valor;
-        }
+                for(let elem of cadena){
+                if(Array.isArray(elem.valor)){
+                    text+=toString(elem.valor, tablaDeSimbolos, ambito);
+                }else if(elem.tipo=="number"){
+                    if(typeof elem.valor === 'number'){
+                        if(elem.valor%1===0){
+                            text+="printf(\"%d\", (int)"+elem.valor+");\n"; 
+                        }else{
+                           text+="printf(\"%f\", (float)"+elem.valor+");\n"; 
+                        }
+                    }else {
+                        text+="printf(\"%f\", "+elem.valor+");\n";
+                    }              
+                }else if(elem.tipo=="boolean"){
+                    if(elem.valor.charAt(0)=="t"){
+                        text+="printf(\"%d\", (int)"+elem.valor+");\n";
+                    }else{
+                        text+="printf(\"%d\", (int)"+elem.valor+");\n";
+                    }               
+                }else if(elem.tipo=="string"){
+                    text+="t0="+elem.valor+";\nimprimir();\n";
+                }
+            } 
+        }   
         return text;
     }
     function sustituirEscapes(cadena){
@@ -426,23 +711,25 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
         let heapInit = pilas.heap;
         if(valor!="undefined"){
-            /**/
             valor=procesarExpresionNumerica(valor, tablaDeSimbolos, ambito, data_type.split("[]")[0]);
             if(valor.tipo=="number"||valor.tipo=="boolean"){
                 valor.direcciones=pilas.heap;
                 if(valor.reference==true){
                     let temp = nuevoTemporal();
-                    consola.value+=temp+"=heap["+valor.valor+"];\nheap[h]="+temp+";\nh=h+1;\n";
+                    valor.direcciones=nuevoTemporal();
+                    consola.value+=valor.direcciones+"=h;\nh=h+1;\n";
+                    consola.value+=temp+"=heap[(int)"+valor.valor+"];\nheap[(int)"+valor.direcciones+"]="+temp+";\n";
                 }else{
-                    consola.value+="heap[(int)h]="+valor.valor+";\nh=h+1;\n";
+                    valor.direcciones=nuevoTemporal();
+                    consola.value+=valor.direcciones+"=h;\n";
+                    consola.value+="heap[(int)"+valor.direcciones+"]="+valor.valor+";\nh=h+1;\n";
                 }
-
                 heapPush();
             }
-            if(valor.reference){
+            if(valor.reference && valor.tipo!="number" && valor.tipo !="boolean"){
                 heapInit=valor.valor;
                 valor.direcciones=valor.valor;
-            } 
+            }
         }else{
             if(data_type=="number"){
                 consola.value+="heap[(int)h]=0;\nh=h+1;";
@@ -462,12 +749,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + data_type,ambito:ambito,tipo:"semántico", linea:fila, columna:columna});
             throw 'ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + data_type;
         }
-        
         //Crear simbolo
         if(valor.tipo.split("[]").length>1 || tablaDeSimbolos.existe(valor.tipo.split("[]")[0], undefined, "type") || ambito=="Global" || valor.tipo=="string"){
             //se va  al heap
             if(valor.tipo=="string"){
-                tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, heapInit);
+                tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, valor.valor);
             }else if(valor.tipo.split("[]").length>1){
                 tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, valor.direcciones);
             }else{
@@ -497,6 +783,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             
             if(valor.tipo=="number"){
                 let temporal = nuevoTemporal();
+
                 return {valor:temporal,tipo:"number"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de resta unitaria con el tipo '+valor.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -695,7 +982,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq+"&&"+valorDer+";\n";
+                consola.value+=temporal+"="+valorIzq.valor+"&&"+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"boolean"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de AND con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -706,7 +993,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq+"||"+valorDer+";\n";
+                consola.value+=temporal+"="+valorIzq.valor+"||"+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"boolean"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -716,7 +1003,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             if(valorIzq.tipo=="boolean"){    
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"=!"+valorIzq+";\n";
+                consola.value+=temporal+"=!"+valorIzq.valor+";\n";
                 return {valor:temporal,tipo:"boolean"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -742,27 +1029,29 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_DATO.OBJETO) {
             return procesarObjeto(expresion, tablaDeSimbolos, ambito, userType);
         } else if (expresion.tipo === TIPO_VALOR.CADENA) {
-           // let initial = nuevoTemporal();
+            let initial = nuevoTemporal();
             let direcciones = pilas.heap;
-           // consola.value+=initial+"=h;\n";
-            for(let i =0;i<expresion.valor.length;i++){
-                consola.value+="heap[(int)h]="+ expresion.valor.charCodeAt(i)+";\nh=h+1;\n";
+            consola.value+=initial+"=h;\n";
+            let cadenaUpdated =  sustituirEscapes(expresion);
+            for(let i =0;i<cadenaUpdated.length;i++){
+                consola.value+="heap[(int)h]="+ cadenaUpdated.charCodeAt(i)+";\nh=h+1;\n";
                 heapPush();
             }
             consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
             heapPush();
-            return {/*valor:initial,*/ tipo: "string", direcciones:direcciones};
+            return {valor:initial, tipo: "string", direcciones:initial};
         } else if (expresion.tipo === TIPO_VALOR.CADENA_CHARS) {
             let initial = nuevoTemporal();
             let direcciones = pilas.heap;
             consola.value+=initial+"=h;\n";
-            for(let i =0;i<expresion.valor.length;i++){
-                consola.value+="heap[(int)h]="+ expresion.valor.charCodeAt(i)+";\nh=h+1;\n";
+            let cadenaUpdated =  sustituirEscapes(expresion);
+            for(let i =0;i<cadenaUpdated.length;i++){
+                consola.value+="heap[(int)h]="+ cadenaUpdated.charCodeAt(i)+";\nh=h+1;\n";
                 heapPush();
             }
             consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
             heapPush();
-            return { valor: initial, tipo: "string" , direcciones:direcciones};
+            return { valor: initial, tipo: "string" , direcciones:initial};
         } else if(expresion.tipo===TIPO_DATO.OPERADOR_TERNARIO){
             let logica =  procesarExpresionNumerica(expresion.logica, tablaDeSimbolos, ambito);
             if(logica.tipo=="boolean"){
@@ -782,13 +1071,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         tamanio=0;
         temp = arreglo.dimension;
         while(temp!="Epsilon"){
-            let dir =pilas.heap;
+            let dir/*=pilas.heap*/;
             temporalBegin = contadores.temporales;
-            //consola.value+=nuevoTemporal()+"="+"h;\nh=h+1;\n";
             //heapPush();
             let valor = procesarExpresionNumerica(temp.dato, tablaDeSimbolos, ambito, userType);
             if(valor.tipo=="boolean"||valor.tipo=="number"){
-                consola.value+="heap[(int)t"+(temporalBegin+1)+"]="+valor.valor+";\n";
+                dir=nuevoTemporal();
+                consola.value+=dir+"="+"h;\n";
+                consola.value+="heap[(int)"+dir+"]="+valor.valor+";\n";
                 direcciones.push(dir);
             }else{
                 direcciones.push(valor.direcciones);
@@ -869,16 +1159,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let direcciones = [];
         while(temp!="Epsilon"){
             //consola.value+=nuevoTemporal()+"="+"h;\nh=h+1;\n";
-            let temporalHeap = pilas.heap, temporalInit=contadores.temporales+1;
+            let temporalHeap = pilas.heap, temporalInit=contadores.temporales+1, dir;
             let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito, userType);
             if(valor.tipo=="number"||valor.tipo=="boolean"){
-                consola.value+="heap[(int)h]="+valor.valor+";\nh=h+1;\n";
+                dir = nuevoTemporal();
+                consola.value+=dir+"=h;\n";
+                consola.value+="heap[(int)"+dir+"]="+valor.valor+";\nh=h+1;\n";
                 heapPush();
-            }
-            
-            if(valor.tipo=="number" || valor.valor=="NULL"){
-                valor.direcciones=temporalHeap;
-                //heapPush();
+                valor.direcciones=dir;
             }
             //heapPush();
             if(tablaDeSimbolos.existe(tipo.atributos[count].tipo.split("[]")[0], undefined, "type")&&valor.valor=="NULL"){
@@ -1219,15 +1507,18 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     //SENTENCIAS DE CONTROL 
     function procesarIf(instruccion, tablaDeSimbolos, ambito) {
+        consola.value+="//comienza el if\n";
+        let verdadero = nuevaEtiqueta(), falso = nuevaEtiqueta();
         const logica = procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito);
-        if (logica.valor) {
+        consola.value+="if("+logica.valor+")goto "+verdadero+";\ngoto "+falso+";\n";
+        consola.value+=verdadero+":\n";
             const tsIf = new TS(tablaDeSimbolos.simbolos.slice(), consola);
             let returnedAcction = procesarBloque(instruccion.accion, tsIf, ambito);
             if(returnedAcction!=undefined){
                 return returnedAcction;
             }
-        } else {
-            if (instruccion.else != "Epsilon") {
+        consola.value+=falso+":\n";
+        if (instruccion.else != "Epsilon") {
                 if (instruccion.else.sentencia === SENTENCIAS.ELSE_IF) {
                     const tsElIf = new TS(tablaDeSimbolos.simbolos.slice(), consola);
                     let returnedAcction = procesarIf(instruccion.else, tsElIf, ambito);
@@ -1241,13 +1532,13 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         return returnedAcction;
                     }
                 }
-            }
-        }
-    
+        }    
     }
     function procesarFor(instruccion, tablaDeSimbolos, ambito) {
+        let inicio =nuevaEtiqueta(), verdadero= nuevaEtiqueta(), falso = nuevaEtiqueta(), temporalID =  nuevoTemporal();
         procesarBloque([instruccion.inicial], tablaDeSimbolos, ambito);
         let instruccionID = instruccion.inicial.sentencia==SENTENCIAS.ASIGNACION?instruccion.inicial.id.id:instruccion.inicial.id;
+        //asignarle el valor del ID al temporal de control
         const valor = procesarExpresionNumerica(instruccion.inicial.expresion, tablaDeSimbolos, ambito);
         tablaDeSimbolos.actualizar(instruccionID, valor);//, SplitAmbitos(ambito)
         if (instruccion.paso.paso == "++") {
@@ -1337,34 +1628,45 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
     }
     function procesarWhile(instruccion ,tablaDeSimbolos, ambito){
-        while(procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito).valor){
+        let inicio = nuevaEtiqueta(), verdadero=nuevaEtiqueta(), falso= nuevaEtiqueta();
+        let valor = procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito);
+        consola.value+=inicio+": if("+valor.valor+") goto "+verdadero+";\n";
+        consola.value+="goto "+falso+";\n";
+        consola.value+=verdadero+":\n";
             const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), consola); 
             let returnedAcction = procesarBloque(instruccion.accion, tsFor, ambito);
             if(returnedAcction!=undefined){
                 if(returnedAcction.sentencia==SENTENCIAS.BREAK){
-                    break;
+                   // break;
+                   consola.value+="goto "+falso+";\n";
                 }else if(returnedAcction.sentencia==SENTENCIAS.CONTINUE){
-                    continue;
+                   // continue;
+                   consola.value+="goto "+inicio+";\n";
                 }else{
-                    return returnedAcction;
-                } 
+                    return returnedAcction;  
+                }
             }
-        }
+        consola.value+=falso+":\n";        
     }
     function procesarDoWhile(instruccion ,tablaDeSimbolos, ambito){
-        do{
+        let inicio = nuevaEtiqueta(), falso = nuevaEtiqueta();
+        consola.value+=inicio+":\n";
             const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), consola); 
             let returnedAcction = procesarBloque(instruccion.accion, tsFor, ambito);
             if(returnedAcction!=undefined){
                 if(returnedAcction.sentencia==SENTENCIAS.BREAK){
-                    break;
+                  //  break;
+                  consola.value+="goto "+falso+";\n";
                 }else if(returnedAcction.sentencia==SENTENCIAS.CONTINUE){
-                    continue;
+                   // continue;
+                   consola.value+="goto "+inicio+";\n";
                 }else{
                     return returnedAcction;
                 } 
             }
-        }while(procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito).valor);
+        let valor = procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito);
+        consola.value+="if("+valor.valor+") goto "+inicio+";\n";
+        consola.value+="goto "+falso+";\n"+falso+":\n";
     }
     function procesarSwitch(instruccion, tablaDeSimbolos, ambito){
         let cases =  getCases(instruccion.cases);
@@ -1508,10 +1810,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "void print(){\nwhile(heap[(int)t0]!=-1){\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\n}\nreturn;\n}";
+        let text = "//t0 es el inicio de la cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;goto L2;\nL1: printf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nreturn;\n}\n";
         //función para concatenar 2 strings
-        text+="void Concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
-        text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}";
+        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
+        text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
+        //funcion para calcular el length de strings
+        text+="//t4 es la cadena y t5 es el valor de retorno\nvoid getLength(){\nL0: if(t4!=-1) goto L1;\ngoto L2;\nL1: t5=t5+1;\nL2: return;\n}\n";
         return text;
     }
 }
