@@ -84,7 +84,8 @@ const TIPO_DATO = {
     VOID:'VOID',
     ARRAY: 'ARRAY',
     TYPE: 'TYPE',
-    OPERADOR_TERNARIO: 'OPERADOR_TERNARIO'
+    OPERADOR_TERNARIO: 'OPERADOR_TERNARIO',
+    NEW_ARRAY:'NEW_ARRAY'
 };
 const TIPO_ACCESO={
     ATRIBUTO:'ATRIBUTO',
@@ -656,6 +657,12 @@ const instruccionesAPI = {
             valor:valor,
             columna:columna,
             fila:fila
+        };
+    },
+    nuevoNewArray: function (expresion){
+        return{
+            tipo:TIPO_DATO.NEW_ARRAY,
+            expresion:expresion
         };
     }
 

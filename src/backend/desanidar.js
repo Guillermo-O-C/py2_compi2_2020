@@ -234,6 +234,8 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
             return "\`"+expresion.valor+"\`";
         }else if (expresion.tipo === TIPO_VALOR.NULL) {
             return "null";
+        }else if(expresion.tipo===TIPO_DATO.NEW_ARRAY){
+            return "new Array("+procesarExpresionNumerica(expresion.expresion)+")";
         }else {
             throw 'ERROR: expresión numérica no válida: ' + expresion.valor;
         }
@@ -377,6 +379,15 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
             }else if(temp.sentencia==SENTENCIAS.POP){
                 text+=".pop()";
                 break;
+            }else if(temp.sentencia==SENTENCIAS.CONCAT){
+                text+=".concat("+procesarExpresionNumerica(temp.valor)+")";
+                break;
+            }else if(temp.sentencia==SENTENCIAS.TO_LOWER_CASE){
+                text+=".toLowerCase()";
+                break;
+            }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
+                text+=".toUpperCase()";
+                break;
             }
             temp=temp.next_acc;
         }
@@ -404,12 +415,12 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
         output+=procesarIdentificador(instruccion.id, tablaDeSimbolos)+"="+procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos)+";";
     }
     function procecsarForOf(instruccion, tablaDeSimbolos, ambito){
-        output+="for(let "+instruccion.variable+" of "+procesarIdentificador(instruccion.conjunto)+"){\n";
+        output+="for(let "+instruccion.variable+" of "+procesarExpresionNumerica(instruccion.conjunto)+"){\n";
         procesarBloque(instruccion.accion, tablaDeSimbolos, ambito);
         output+="}";
     }
     function procesarForIn(instruccion, tablaDeSimbolos, ambito){
-        output+="for(let "+instruccion.variable+" in "+procesarIdentificador(instruccion.conjunto)+"){\n";
+        output+="for(let "+instruccion.variable+" in "+procesarExpresionNumerica(instruccion.conjunto)+"){\n";
         procesarBloque(instruccion.accion, tablaDeSimbolos, ambito);
         output+="}";
     }

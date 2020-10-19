@@ -2,6 +2,7 @@ import { TS, TIPO_DATO, SENTENCIAS, TIPO_VARIABLE, TIPO_OPERACION, TIPO_VALOR, T
 
 export default function Traucir(salida, consola, traduccion, printedTable, tablero){
     const contadores = {temporales:4, etiquetas:0};
+    const arreglos = {uno:0, dos:0, tres:0, cuatro:0, cinco:0};
     const pilas = {stack:0, heap:0};
     const stack = [], heap=[];
    let output="";
@@ -26,7 +27,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
         }
         consola.value="#include <stdio.h> //Importar para el uso de Printf\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+consola.value+"\nreturn;\n}\n"+funcionesNativas();
-        traduccion.setValue(output);
+        //traduccion.setValue(output);
         console.log(tsGlobal);
         sendTable(tsGlobal);
     } catch (e) {
@@ -281,12 +282,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
     }
     function procesarAsigacion(instruccion, tablaDeSimbolos, ambito){
-        let assignedValue = procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos, ambito);
         let principalValue = tablaDeSimbolos.getSimbol(instruccion.id.id, SplitAmbitos(ambito), instruccion.fila, instruccion.columna);
         if(principalValue.var_type==TIPO_VARIABLE.CONST && instruccion.id.acc=="Epsilon"){
             consola.value+='f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\n>ERROR: No se puede asignar a ' + instruccion.id.id+' porque es una constante.\n';  
             throw '>ERROR:  No se puede asignar a ' + instruccion.id.id+' porque es una constante.\n';   
         }
+        let assignedValue = procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos, ambito);
         let temp = instruccion.id.acc;
         while(temp!="Epsilon"){
             if(temp.acc_type==TIPO_ACCESO.ATRIBUTO){//B
@@ -337,20 +338,32 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
             temp=temp.next_acc;
         }
-        if(principalValue.tipo.split("[]")[0]=="undefined"){
+       /* if(principalValue.tipo.split("[]")[0]=="undefined"){
             principalValue.valor=assignedValue.valor;
             principalValue.tipo=assignedValue.tipo;
         }else{
             if(assignedValue.valor==null){
                 principalValue.valor=assignedValue.valor;
                 principalValue.tipo=assignedValue.tipo;
-            }else if(principalValue.tipo!=assignedValue.tipo){
+            }else */
+            if(principalValue.tipo!=assignedValue.tipo){
                 consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';  
                 throw '>ERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';                
             }else{
-                principalValue.valor=assignedValue.valor;
+                if(principalValue.tipo=="number"){
+                    //let temporal = nuevoTemporal();
+                    let pila = (ambito=="Global")?"heap":"stack";
+                    consola.value+=pila+"[(int)"+principalValue.direcciones+"]="+assignedValue.valor+";\n";
+                }else if(principalValue.tipo=="boolean"){
+                    //let temporal = nuevoTemporal();
+                    let pila = (ambito=="Global")?"heap":"stack";
+                    consola.value+=pila+"[(int)"+principalValue.direcciones+"]="+assignedValue.valor+";\n";
+                }else{
+                    principalValue.direcciones=assignedValue.valor;
+                }
+               // principalValue.valor=assignedValue.valor;
             }
-        }
+        //}
         //obtener el valor a cambiar y ver que  no sea const
         //
     }
@@ -392,6 +405,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
                 return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="number"){
+                //let temporal = nuevoTemporal();
+                //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:[valorIzq, valorDer],tipo:"string"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
+                return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
+            }else if(valorIzq.tipo=="number" && valorDer.tipo=="string"){
                 //let temporal = nuevoTemporal();
                 //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
                 return {valor:[valorIzq, valorDer],tipo:"string"};
@@ -716,9 +737,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 valor.direcciones=pilas.heap;
                 if(valor.reference==true){
                     let temp = nuevoTemporal();
-                    valor.direcciones=nuevoTemporal();
+                    let pila = (ambito=="Global")?"heap":"stack";
+                    /*valor.direcciones=nuevoTemporal();
                     consola.value+=valor.direcciones+"=h;\nh=h+1;\n";
-                    consola.value+=temp+"=heap[(int)"+valor.valor+"];\nheap[(int)"+valor.direcciones+"]="+temp+";\n";
+                    consola.value+=temp+"=heap[(int)"+valor.valor+"];\nheap[(int)"+valor.direcciones+"]="+temp+";\n";*/
+                    valor.direcciones=nuevoTemporal();
+                    consola.value+=temp+"="+valor.valor+";\n";
+                    consola.value+=pila+"[(int)"+valor.direcciones+"]="+temp+";\n";
+                    
                 }else{
                     valor.direcciones=nuevoTemporal();
                     consola.value+=valor.direcciones+"=h;\n";
@@ -732,16 +758,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
         }else{
             if(data_type=="number"){
-                consola.value+="heap[(int)h]=0;\nh=h+1;";
-                valor={valor:0,tipo:"number"};
+                valor={valor:0,tipo:"number", direcciones:nuevoTemporal()};
+                consola.value+=valor.direcciones+"=h;\n"
+                consola.value+="heap[(int)"+valor.direcciones+"]=0;\nh=h+1;";
                 heapPush();
             }else if(data_type=="boolean"){
-                valor={valor:false, tipo:"boolean"};
-                consola.value+="heap[(int)h]=false;\nh=h+1;";
+                valor={valor:0, tipo:"boolean"};
+                consola.value+="heap[(int)"+valor.direcciones+"]=false;\nh=h+1;";
                 heapPush();
             }else{
-                valor={valor:null, tipo:data_type};
-                consola.value+="heap[(int)h]=null;\nh=h+1;";
+                valor={valor:0, tipo:data_type};
+                consola.value+="heap[(int)h]=0;\nh=h+1;";
             }
         }
         if(data_type!=valor.tipo){  //se descarta la inferencia de tipos
@@ -802,6 +829,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"number"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"string"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="number"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                return {valor:temporal,tipo:"number"};
+            }else if(valorIzq.tipo=="number" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"string"};
@@ -1062,7 +1097,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
     }
     function procesarArray(arreglo, tablaDeSimbolos, ambito, userType){
-
         consola.value+="//comienza arreglo \n";
         let temporal = [];
         let temp = arreglo.dimension;
@@ -1088,6 +1122,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             tamanio++;
         }
         checkForMultyType(JSON.parse(JSON.stringify(temporal)), tablaDeSimbolos, ambito);
+        consola.value+="//comienza declaración del arreglo en C3D\n";
+        declararArregloC3D({direcciones:direcciones, tipo:userType+"[]"});
         consola.value+="//termina arreglo \n";
         return {tipo:getType(temporal)+calcularDimensiones(temporal), valor:"t"+arrayHead, direcciones:direcciones};
     }
@@ -1214,6 +1250,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             consola.value+=finalDirection+"="+principalValue.valor+";\n";
         }
         */
+        
         let temp = instruccion.acc;
         while(temp!="Epsilon"){
             if(temp.acc_type==TIPO_ACCESO.ATRIBUTO){//B
@@ -1234,6 +1271,13 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 principalValue.tipo=value.valor.tipo;
             }else if(temp.acc_type==TIPO_ACCESO.POSICION){//B
                 //comprobar que sea un array
+                /*
+                se crea un conflicto cuando se pasa a una variable del tipo:
+                let a : number [][] = [[1,2,3],[4,5,6]];
+                let i :number = 0;
+                let b:number[] = a[i];  //nose sabría el valor de la posición a menos que se ingrese con un número
+                let b : number [] = a[0];                   
+                */
                 if(!Array.isArray(principalValue.valor)){
                 // if(principalValue.tipo!=TIPO_DATO.ARRAY){
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: Intento de acceso a posición de array inexistente\n';  
@@ -1245,13 +1289,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se reconoce la expresion '+valor.valor+' como un index.\n';  
                     printedTable.erEj.push({descripcion:'No se reconoce la expresion '+valor.valor+' como un index.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                     throw '>ERROR:No se reconoce la expresion '+valor.valor+' como un index.\n';                      
-                }/*
-                if(valor.valor>=principalValue.valor.length ||valor.valor<0){
-                    consola.value+='>ERROR: No existe el elemento '+valor.valor+' en el array.\n';  
-                    throw '>ERROR: No existe el elemento '+valor.valor+' en el array.\n';             
-                }*/
+                }
                 //comprobar que la posición no sea más larga que el length de la posición.
-                principalValue = principalValue.valor[valor.valor];
+                
+                //principalValue.direcciones = principalValue.direcciones[valor.valor];
+                //no sabemos el valor de la posición del array 
+
                 let tipo ="";
                 for(let e =0;e<principalValue.tipo.split("[]").length-1;e++){
                     if(e==0)tipo+=principalValue.tipo.split("[]")[e];
@@ -1313,6 +1356,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 break;
             }
             temp=temp.next_acc;
+        }
+        if(principalValue.tipo =="number" || principalValue.tipo=="boolean"){
+            principalValue.valor=pila+"[(int)"+principalValue.valor+"]";
         }
         return {valor: principalValue.valor, tipo:principalValue.tipo, reference:true};   
     }
@@ -1542,19 +1588,27 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         const valor = procesarExpresionNumerica(instruccion.inicial.expresion, tablaDeSimbolos, ambito);
         tablaDeSimbolos.actualizar(instruccionID, valor);//, SplitAmbitos(ambito)
         if (instruccion.paso.paso == "++") {
-            for (var i = tablaDeSimbolos.obtenerSimbolo(instruccionID, SplitAmbitos(ambito)); procesarExpresionNumerica(instruccion.final, tablaDeSimbolos, ambito).valor; tablaDeSimbolos.actualizar(instruccionID, { valor: Number(tablaDeSimbolos.obtenerSimbolo(instruccionID, SplitAmbitos(ambito)).valor) + 1, tipo: tablaDeSimbolos.obtenerSimbolo(instruccionID, SplitAmbitos(ambito)).tipo })) {
-                const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), consola); 
+            consola.value+=inicio+":\n";
+            let condicion = procesarExpresionNumerica(instruccion.final, tablaDeSimbolos, ambito).valor;
+            consola.value+="if("+condicion+") goto "+verdadero+";\ngoto "+falso+";\n";
+            consola.value+=verdadero+":\n";
+            const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), consola); 
                 let returnedAcction =  procesarBloque(instruccion.accion, tsFor, ambito);
                 if(returnedAcction!=undefined){
                     if(returnedAcction.sentencia==SENTENCIAS.BREAK){
-                        break;
+                       // break;
                     }else if(returnedAcction.sentencia==SENTENCIAS.CONTINUE){
-                        continue;
+                      //  continue;
                     }else{
                         return returnedAcction;
                     } 
-                }                
-            }
+                }
+            let identificador = tablaDeSimbolos.getSimbol(instruccionID,SplitAmbitos(ambito), "inFor", "inFor");
+            //incremento 
+            let pila=(identificador.ambito=="Global")?"heap":"stack";
+            consola.value+=temporalID+"="+pila+"[(int)"+identificador.direcciones+"]+1;\n"+pila+"[(int)"+identificador.direcciones+"]="+temporalID+";\n";
+            consola.value+="goto "+inicio+";\n";
+            consola.value+=falso+":\n";
         } else if (instruccion.paso.paso == "--") {
             for (var i = tablaDeSimbolos.obtenerSimbolo(instruccionID, SplitAmbitos(ambito)); procesarExpresionNumerica(instruccion.final, tablaDeSimbolos, ambito).valor; tablaDeSimbolos.actualizar(instruccionID, { valor: Number(tablaDeSimbolos.obtenerSimbolo(instruccionID, SplitAmbitos(ambito)).valor) - 1, tipo: tablaDeSimbolos.obtenerSimbolo(instruccionID, SplitAmbitos(ambito)).tipo })) {
                 const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), consola); 
@@ -1629,8 +1683,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function procesarWhile(instruccion ,tablaDeSimbolos, ambito){
         let inicio = nuevaEtiqueta(), verdadero=nuevaEtiqueta(), falso= nuevaEtiqueta();
+        consola.value+=inicio+": \n";
         let valor = procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito);
-        consola.value+=inicio+": if("+valor.valor+") goto "+verdadero+";\n";
+        consola.value+="if("+valor.valor+") goto "+verdadero+";\n";
         consola.value+="goto "+falso+";\n";
         consola.value+=verdadero+":\n";
             const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), consola); 
@@ -1792,6 +1847,25 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         contadores.etiquetas++;
         return "L"+contadores.etiquetas;
     }
+    function nuevoArreglo(dimension){
+        switch(dimension){
+            case 1:
+                arreglos.uno++;
+                return "arrayOne"+arreglos.uno;
+            case 2:
+                arreglos.dos++;
+                return "arrayOne"+arreglos.dos;
+            case 3:
+                arreglos.tres++;
+                return "arrayOne"+arreglos.tres;
+            case 4:
+                arreglos.cuatro++;
+                return "arrayOne"+arreglos.cuatro;
+            case 5:
+                arreglos.cinco++;
+                return "arrayOne"+arreglos.cinco;
+        }
+    }
     function stackPush(){
         pilas.stack++;
         return pilas.stack-1;
@@ -1817,5 +1891,43 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         //funcion para calcular el length de strings
         text+="//t4 es la cadena y t5 es el valor de retorno\nvoid getLength(){\nL0: if(t4!=-1) goto L1;\ngoto L2;\nL1: t5=t5+1;\nL2: return;\n}\n";
         return text;
+    }
+    function declararArregloC3D(arreglo){
+        let tipo ="", arrayName="";
+        for(let i =0; i<arreglo.tipo.split("[]").length-1;i++){
+            tipo+=arreglo.tipo.split("[]")[i];
+        }
+        switch(arreglo.tipo.split("[]").length){
+            case 1: 
+                return;
+            case 2:
+                arrayName = nuevoArreglo(1);
+                for(let i =0;i<arreglo.direcciones.length;i++){
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                }
+                //declarar los arreglos con los elemntos de la dimensión
+                return arrayName;
+            case 3:
+                arrayName = nuevoArreglo(2);
+                for(let i =0;i<arreglo.direcciones.length;i++){
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                }
+                //declarar los arreglos con los elemntos de la dimensión
+                return arrayName;
+            case 4:
+                arrayName = nuevoArreglo(3);
+                for(let i =0;i<arreglo.direcciones.length;i++){
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                }
+                //declarar los arreglos con los elemntos de la dimensión
+                return arrayName;
+            case 5:
+                arrayName = nuevoArreglo(4);
+                for(let i =0;i<arreglo.direcciones.length;i++){
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                }
+                //declarar los arreglos con los elemntos de la dimensión
+                return arrayName;
+        }
     }
 }

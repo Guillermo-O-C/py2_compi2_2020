@@ -101,9 +101,9 @@ export default function UI() {
     }
   } 
   function Translate(){
-    Desanidar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
   }
   function Interpretar(){
+    Desanidar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
     tablero.innerHTML=document.createElement("div").innerHTML;
     Traducir(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports,  tablero);
   }
@@ -539,7 +539,7 @@ export default function UI() {
             </Button>
               </div>
               <div style={{height:'30%', float:'inline-start', alignContent:'stretch'}}>
-              <Button
+              {/* <Button
           variant="contained"
           color="secondary"
           size="large"
@@ -548,7 +548,7 @@ export default function UI() {
           onClick={()=>{Translate()}}
         >
           Desanidar Programa
-        </Button>
+        </Button> */}
         <Button
           variant="contained"
           color="primary"

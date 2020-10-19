@@ -217,6 +217,7 @@ expresion
 	| id {$$=instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR);}
 	| expresion OPERADOR_TERNARIO expresion DOS_PUNTOS expresion {$$=instruccionesAPI.nuevoOperadorTernario($1, $3, $5);}
 	| R_NULL {$$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.NULL);}
+	| R_NEW R_ARRAY ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoNewArray($4);}
 ;
 argumentos
 	: expresion argumentos_P {$$ = instruccionesAPI.nuevoArgumento($1, $2, @1.first_column, @1.first_line);}
