@@ -3,6 +3,7 @@ import { TS, TIPO_DATO, SENTENCIAS, TIPO_VARIABLE, TIPO_OPERACION, TIPO_VALOR, T
 export default function Traucir(salida, consola, traduccion, printedTable, tablero){
     const contadores = {temporales:4, etiquetas:0};
     const arreglos = {uno:0, dos:0, tres:0, cuatro:0, cinco:0};
+   //const arreglos = [];
     const pilas = {stack:0, heap:0};
     const stack = [], heap=[];
    let output="";
@@ -26,7 +27,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 throw '>ERROR: Continue fuera de un ciclo.';  
             }
         }
-        consola.value="#include <stdio.h> //Importar para el uso de Printf\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+consola.value+"\nreturn;\n}\n"+funcionesNativas();
+        consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <stdlib.h> //Importar malloc\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+consola.value+"\nreturn;\n}\n"+funcionesNativas();
         //traduccion.setValue(output);
         console.log(tsGlobal);
         sendTable(tsGlobal);
@@ -1098,7 +1099,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function procesarArray(arreglo, tablaDeSimbolos, ambito, userType){
         consola.value+="//comienza arreglo \n";
-        let temporal = [];
+        let temporal = [], tipo="";
         let temp = arreglo.dimension;
         let tamanio=0, direcciones=[],temporalBegin,arrayHead=contadores.temporales+1;
         //consola.value+="h=h+"+tamanio+";\n";
@@ -1112,10 +1113,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             if(valor.tipo=="boolean"||valor.tipo=="number"){
                 dir=nuevoTemporal();
                 consola.value+=dir+"="+"h;\n";
-                consola.value+="heap[(int)"+dir+"]="+valor.valor+";\n";
+                consola.value+="heap[(int)"+dir+"]="+valor.valor+";\nh=h+1;\n";
                 direcciones.push(dir);
             }else{
                 direcciones.push(valor.direcciones);
+                tipo=valor.tipo;
             }            
             temporal.push(valor);
             temp=temp.next_data;
@@ -1123,7 +1125,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
         checkForMultyType(JSON.parse(JSON.stringify(temporal)), tablaDeSimbolos, ambito);
         consola.value+="//comienza declaración del arreglo en C3D\n";
-        declararArregloC3D({direcciones:direcciones, tipo:userType+"[]"});
+        direcciones = declararArregloC3D({direcciones:direcciones, tipo:tipo+"[]"});
         consola.value+="//termina arreglo \n";
         return {tipo:getType(temporal)+calcularDimensiones(temporal), valor:"t"+arrayHead, direcciones:direcciones};
     }
@@ -1854,16 +1856,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return "arrayOne"+arreglos.uno;
             case 2:
                 arreglos.dos++;
-                return "arrayOne"+arreglos.dos;
+                return "arrayTwo"+arreglos.dos;
             case 3:
                 arreglos.tres++;
-                return "arrayOne"+arreglos.tres;
+                return "arrayThree"+arreglos.tres;
             case 4:
                 arreglos.cuatro++;
-                return "arrayOne"+arreglos.cuatro;
+                return "arrayFour"+arreglos.cuatro;
             case 5:
                 arreglos.cinco++;
-                return "arrayOne"+arreglos.cinco;
+                return "arrayFive"+arreglos.cinco;
         }
     }
     function stackPush(){
@@ -1878,9 +1880,24 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let txt ="";
         for(let i = 0;i<=contadores.temporales;i++){
             txt+="t"+i;
-            txt+=(i<contadores.temporales)?",":";\n";
+            txt+=(i<contadores.temporales)?",":"";
         }
-        return txt;
+        for(let i =0;i<arreglos.uno;i++){
+            txt+= ",*arrayOne"+(i+1);
+        }
+        for(let i =0;i<arreglos.dos;i++){
+            txt+= ",**arrayTwo"+(i+1);
+        }
+        for(let i =0;i<arreglos.tres;i++){
+            txt+= ",***arrayThree"+(i+1);
+        }
+        for(let i =0;i<arreglos.cuatro;i++){
+            txt+= ",****arrayFour"+(i+1);
+        }
+        for(let i =0;i<arreglos.cinco;i++){
+            txt+= ",*****arrayFive"+(i+1);
+        }
+        return txt+";\n";
     }
     function funcionesNativas(){
         //funcion para imprimir strings
@@ -1902,29 +1919,37 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return;
             case 2:
                 arrayName = nuevoArreglo(1);
+                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";
                 for(let i =0;i<arreglo.direcciones.length;i++){
-                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
                 }
                 //declarar los arreglos con los elemntos de la dimensión
+                arreglo.direcciones=arrayName;
                 return arrayName;
             case 3:
                 arrayName = nuevoArreglo(2);
+                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";
                 for(let i =0;i<arreglo.direcciones.length;i++){
-                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                    declararArregloC3D({direcciones:arreglo.direcciones[i], tipo:tipo});
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
                 }
                 //declarar los arreglos con los elemntos de la dimensión
                 return arrayName;
             case 4:
                 arrayName = nuevoArreglo(3);
+                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";
                 for(let i =0;i<arreglo.direcciones.length;i++){
-                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                    declararArregloC3D({direcciones:arreglo.direcciones[i], tipo:tipo});
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
                 }
                 //declarar los arreglos con los elemntos de la dimensión
                 return arrayName;
             case 5:
                 arrayName = nuevoArreglo(4);
+                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";        
                 for(let i =0;i<arreglo.direcciones.length;i++){
-                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i];
+                    declararArregloC3D({direcciones:arreglo.direcciones[i], tipo:tipo});
+                    consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
                 }
                 //declarar los arreglos con los elemntos de la dimensión
                 return arrayName;

@@ -223,7 +223,7 @@ export default function UI() {
   function toString(simbolo){
     let text="";
     if(simbolo.tipo.split("[]").length>1){
-      text+="[";
+      /*text+="[";
       for(let i = 0;i<simbolo.direcciones.length;i++){
         if(Array.isArray(simbolo.direcciones[i])){
           let tipo ="";
@@ -239,7 +239,8 @@ export default function UI() {
               text+=", ";
           }
       }
-      text+="]";
+      text+="]";*/
+      text+=simbolo.direcciones;
     }else if(Array.isArray(simbolo.direcciones)){
       text+="{";
       for(let i = 0;i<simbolo.direcciones.length;i++){
@@ -443,7 +444,25 @@ export default function UI() {
     setOpen(false);
     document.getElementById('AST_FRAME').style.display="none";
    };
-
+   const copyToClipboard = str => {
+    const el = document.createElement('textarea');  // Create a <textarea> element
+    el.value = document.getElementById('consola').value;                                 // Set its value to the string that you want copied
+    el.setAttribute('readonly', '');                // Make it readonly to be tamper-proof
+    el.style.position = 'absolute';                 
+    el.style.left = '-9999px';                      // Move outside the screen to make it invisible
+    document.body.appendChild(el);                  // Append the <textarea> element to the HTML document
+    const selected =            
+      document.getSelection().rangeCount > 0        // Check if there is any content selected previously
+        ? document.getSelection().getRangeAt(0)     // Store selection if found
+        : false;                                    // Mark as false to know no selection existed before
+    el.select();                                    // Select the <textarea> content
+    document.execCommand('copy');                   // Copy - only works as a result of a user action (e.g. click events)
+    document.body.removeChild(el);                  // Remove the <textarea> element
+    if (selected) {                                 // If a selection existed before copying
+      document.getSelection().removeAllRanges();    // Unselect everything on the HTML document
+      document.getSelection().addRange(selected);   // Restore the original selection
+    }
+  };
   return (
     <div className={classes.root}>
       <Grid container spacing={2}>
@@ -481,7 +500,7 @@ export default function UI() {
         </Grid>
       <Grid container spacing={2}>
           <Grid item xs={6}>
-            <Paper className={classes.paper}>CONSOLA<Button startIcon={<FileCopyIcon/>} style={{marginRight:0}}></Button></Paper>
+            <Paper className={classes.paper}>CONSOLA<Button startIcon={<FileCopyIcon/>} style={{marginRight:0}} onClick={copyToClipboard}></Button></Paper>
             <textarea disabled id="consola" style={{width:"100%", height:"50vh", resize: "none", backgroundColor:"#0f4c75", color:"#ffff"}} ></textarea>
 
           </Grid> 
