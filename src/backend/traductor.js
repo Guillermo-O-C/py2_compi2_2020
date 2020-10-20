@@ -27,7 +27,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 throw '>ERROR: Continue fuera de un ciclo.';  
             }
         }
-        consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <stdlib.h> //Importar malloc\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+consola.value+"\nreturn;\n}\n"+funcionesNativas();
+        consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <stdlib.h> //Importar malloc\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+funcionesNativas()+consola.value+"\nreturn;\n}\n";
         //traduccion.setValue(output);
         console.log(tsGlobal);
         sendTable(tsGlobal);
@@ -289,7 +289,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             throw '>ERROR:  No se puede asignar a ' + instruccion.id.id+' porque es una constante.\n';   
         }
         let assignedValue = procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos, ambito);
-        let temp = instruccion.id.acc;
+        let temp = instruccion.id.acc, tipo =principalValue.tipo, direcciones=principalValue.direcciones;
         while(temp!="Epsilon"){
             if(temp.acc_type==TIPO_ACCESO.ATRIBUTO){//B
                 //comprobar que exista la propiedad
@@ -312,9 +312,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }
             }else if(temp.acc_type==TIPO_ACCESO.POSICION){//B
                 //comprobar que sea un array
-                if(!Array.isArray(principalValue.valor)){
-                // if(principalValue.tipo!=TIPO_DATO.ARRAY){
+                if(principalValue.tipo.split("[]")==1){
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: Intento de acceso a posición de array inexistente\n';  
+                    printedTable.erEj.push({descripcion:'Intento de acceso a posición de array inexistente',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                     throw '>ERROR: Intento de acceso a posición de array inexistente\n';                    
                 }
                 let valor = procesarExpresionNumerica(temp.index, tablaDeSimbolos, ambito);
@@ -322,17 +322,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se reconoce la expresion '+valor.valor+' como un index.\n';  
                     throw '>ERROR:No se reconoce la expresion '+valor.valor+' como un index.\n';                      
                 }
-                if(valor.valor>=principalValue.valor.length ||valor.valor<0){
-                    //consola.value+='>ERROR: No existe el elemento '+valor.valor+' en el array.\n';  
-                    //throw '>ERROR: No existe el elemento '+valor.valor+' en el array.\n'; 
-                   /* while(principalValue.valor.length!=valor.valor-1){
-                        principalValue.valor.push();
-                    }   */         
-                    principalValue.valor[valor.valor]=assignedValue;
-                    return;
+                let tempTipo="";
+                for(let e =0;e<tipo.split("[]").length-1;e++){
+                    if(e==0)tempTipo+=tipo.split("[]")[e];
+                    else tempTipo+="[]";
                 }
-                //comprobar que la posición no sea más larga que el length de la posición.
-                principalValue = principalValue.valor[valor.valor];
+                tipo=tempTipo;
+                //consola.value+=principalValue.direcciones+"["+valor.valor+"]="+valor.valor;
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+direcciones+"["+valor.valor+"];\n";
+                direcciones=temporal;
+                //principalValue.valor = assignedValue;
             }else {
                 consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede asignar esta accion en esta asignación: '+temp+'\n';  
                 throw '>ERROR: No se puede asignar esta accion en esta asignación: '+temp+'\n';
@@ -347,18 +347,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 principalValue.valor=assignedValue.valor;
                 principalValue.tipo=assignedValue.tipo;
             }else */
-            if(principalValue.tipo!=assignedValue.tipo){
+            if(tipo!=assignedValue.tipo){
                 consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';  
                 throw '>ERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';                
             }else{
-                if(principalValue.tipo=="number"){
+                if(tipo=="number"||principalValue.tipo=="boolean"){
                     //let temporal = nuevoTemporal();
                     let pila = (ambito=="Global")?"heap":"stack";
-                    consola.value+=pila+"[(int)"+principalValue.direcciones+"]="+assignedValue.valor+";\n";
-                }else if(principalValue.tipo=="boolean"){
-                    //let temporal = nuevoTemporal();
-                    let pila = (ambito=="Global")?"heap":"stack";
-                    consola.value+=pila+"[(int)"+principalValue.direcciones+"]="+assignedValue.valor+";\n";
+                    consola.value+=pila+"[(int)"+direcciones+"]="+assignedValue.valor+";\n";
                 }else{
                     principalValue.direcciones=assignedValue.valor;
                 }
@@ -832,7 +828,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:temporal,tipo:"number"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorIzq.valor+";\n";
+                consola.value+="t3="+valorDer.valor+";\n";
+                consola.value+="conStrNum();\n";
                 return {valor:temporal,tipo:"string"};
             }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
@@ -840,7 +839,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:temporal,tipo:"number"};
             }else if(valorIzq.tipo=="number" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorDer.valor+";\n";
+                consola.value+="t3="+valorIzq.valor+";\n";
+                consola.value+="conNumStr();\n";
                 return {valor:temporal,tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
@@ -851,7 +853,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:temporal,tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="boolean"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorIzq.valor+";\n";
+                consola.value+="t3="+valorDer.valor+";\n";
+                consola.value+="conStrNum();\n";
+                return {valor:temporal,tipo:"string"};
+            }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="string"){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorDer.valor+";\n";
+                consola.value+="t3="+valorIzq.valor+";\n";
+                consola.value+="conNumStr();\n";
                 return {valor:temporal,tipo:"string"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -1913,16 +1925,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "//t0=cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L3;\nL1: if(heap[(int)t0]>300) goto L2;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;L2:\nprintf(\"%f\", heap[(int)t0]-300);\nt0=t0+1;\ngoto L0;\nL3;\nreturn;\n}";
+        let text = "//t0=cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L3;\nL1: if(heap[(int)t0]>300) goto L2;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nprintf(\"%f\", heap[(int)t0]-300);\nt0=t0+1;\ngoto L0;\nL3:\nreturn;\n}";
         //función para concatenar 2 strings
-        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;F";
+        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
         text+="//t4 es la cadena y t5 es el valor de retorno\nvoid getLength(){\nL0: if(t4!=-1) goto L1;\ngoto L2;\nL1: t5=t5+1;\nL2: return;\n}\n";
         //funcion para concatenar una string y un numero 
-        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;t1=t1+1;\ngoto L0;\nL2: \nheap[(int)h]=t3+300;\nh=h+1;\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: \nheap[(int)h]=t3+300;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion apra concatenar un número y string
-        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nheap[(int)h]=t3+300;\nh=h+1;\nL1: if(heap[(int)t1]!=-1) goto L2;\ngoto L3;\nL2: t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL3:   \nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nheap[(int)h]=t3+300;\nh=h+1;\nL1: if(heap[(int)t1]!=-1) goto L2;\ngoto L3;\nL2:\n t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL3:\nheap[(int)h]=-1;\nh=h+1;\n\nreturn;\n}\n";
         return text;
     }
     function declararArregloC3D(arreglo){
