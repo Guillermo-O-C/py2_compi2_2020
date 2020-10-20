@@ -744,6 +744,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=temp+"=heap[(int)"+valor.valor+"];\nheap[(int)"+valor.direcciones+"]="+temp+";\n";*/
                     valor.direcciones=nuevoTemporal();
                     consola.value+=temp+"="+valor.valor+";\n";
+                    consola.value+=valor.direcciones+"=h;\n";
                     consola.value+=pila+"[(int)"+valor.direcciones+"]="+temp+";\n";
                     
                 }else{
@@ -843,7 +844,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:temporal,tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorIzq.valor+";\n";
+                consola.value+="t3="+valorDer.valor+";\n";
+                consola.value+="concatenar();\n";
                 return {valor:temporal,tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="boolean"){
                 let temporal = nuevoTemporal();
@@ -1280,7 +1284,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 let b:number[] = a[i];  //nose sabría el valor de la posición a menos que se ingrese con un número
                 let b : number [] = a[0];                   
                 */
-                if(!Array.isArray(principalValue.valor)){
+                if(principalValue.tipo.split("[]")==1){
                 // if(principalValue.tipo!=TIPO_DATO.ARRAY){
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: Intento de acceso a posición de array inexistente\n';  
                     printedTable.erEj.push({descripcion:'Intento de acceso a posición de array inexistente',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
@@ -1292,17 +1296,25 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     printedTable.erEj.push({descripcion:'No se reconoce la expresion '+valor.valor+' como un index.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                     throw '>ERROR:No se reconoce la expresion '+valor.valor+' como un index.\n';                      
                 }
-                //comprobar que la posición no sea más larga que el length de la posición.
-                
                 //principalValue.direcciones = principalValue.direcciones[valor.valor];
                 //no sabemos el valor de la posición del array 
-
                 let tipo ="";
                 for(let e =0;e<principalValue.tipo.split("[]").length-1;e++){
                     if(e==0)tipo+=principalValue.tipo.split("[]")[e];
                     else tipo+="[]";
                 }
                 principalValue.tipo=tipo;
+                if(principalValue.tipo=="number" || principalValue.tipo=="boolean"){
+                    let temporal = nuevoTemporal();
+                    consola.value+=temporal+"="+principalValue.valor+"[(int)"+valor.valor+"];\n";
+                    principalValue.valor=temporal;
+                }else if(principalValue.tipo.split("[]").length>1){
+                     let arreglo = nuevoArreglo(principalValue.tipo.split("[]").length-1);
+                     consola.value+=arreglo+"="+principalValue.valor+"["+valor.valor+"];\n";
+                     principalValue.valor=arreglo;
+                }else{
+                    principalValue.valor=principalValue.valor+"["+valor.valor+"]";
+                }
             }else if(temp.sentencia==SENTENCIAS.LENGTH){//R
                 if(!Array.isArray(principalValue.valor)){
                     // if(principalValue.tipo!=TIPO_DATO.ARRAY){
@@ -1360,8 +1372,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             temp=temp.next_acc;
         }
         if(principalValue.tipo =="number" || principalValue.tipo=="boolean"){
-            principalValue.valor=pila+"[(int)"+principalValue.valor+"]";
-        }
+                    principalValue.valor=pila+"[(int)"+principalValue.valor+"]";
+                }
         return {valor: principalValue.valor, tipo:principalValue.tipo, reference:true};   
     }
     function SplitAmbitos(name){
@@ -1901,12 +1913,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "//t0 es el inicio de la cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;goto L2;\nL1: printf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nreturn;\n}\n";
+        let text = "//t0=cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L3;\nL1: if(heap[(int)t0]>300) goto L2;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;L2:\nprintf(\"%f\", heap[(int)t0]-300);\nt0=t0+1;\ngoto L0;\nL3;\nreturn;\n}";
         //función para concatenar 2 strings
-        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
+        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;F";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
         text+="//t4 es la cadena y t5 es el valor de retorno\nvoid getLength(){\nL0: if(t4!=-1) goto L1;\ngoto L2;\nL1: t5=t5+1;\nL2: return;\n}\n";
+        //funcion para concatenar una string y un numero 
+        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;t1=t1+1;\ngoto L0;\nL2: \nheap[(int)h]=t3+300;\nh=h+1;\nreturn;\n}\n";
+        //funcion apra concatenar un número y string
+        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nheap[(int)h]=t3+300;\nh=h+1;\nL1: if(heap[(int)t1]!=-1) goto L2;\ngoto L3;\nL2: t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL3:   \nreturn;\n}\n";
         return text;
     }
     function declararArregloC3D(arreglo){
