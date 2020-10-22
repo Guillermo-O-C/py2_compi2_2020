@@ -27,7 +27,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 throw '>ERROR: Continue fuera de un ciclo.';  
             }
         }
-        consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <stdlib.h> //Importar malloc\nfloat heap[16384]; //Estructura para heap\nfloat stack[16394]; //Estructura para stack\nfloat p; //Puntero P\nfloat h; //Puntero H\nfloat "+printTemporales()+funcionesNativas()+consola.value+"\nreturn;\n}\n";
+        consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <stdlib.h> //Importar malloc\n#include <math.h>//Importa fmod\ndouble heap[16384]; //Estructura para heap\ndouble stack[16394]; //Estructura para stack\ndouble p; //Puntero P\ndouble h; //Puntero H\ndouble "+printTemporales()+funcionesNativas()+consola.value+"\nreturn;\n}\n";
         //traduccion.setValue(output);
         console.log(tsGlobal);
         sendTable(tsGlobal);
@@ -299,15 +299,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No existe el atributo '+temp.atributo+'\n';  
                     throw '>ERROR: No existe el atributo '+temp.atributo+'\n';
                 }
-                for(let attribute of principalValue.valor){
+                for(let attribute of principalValue.direcciones){
                     if(attribute.id==temp.atributo){
-                        principalValue=attribute.valor;
-                        if(principalValue.valor==null){
-                            //no estoy seguro si hacerlo así o solo pasarle el tipo
-                            principalValue.valor=assignedValue.valor;
-                            principalValue.tipo=assignedValue.tipo;
-                            return;
-                        }
+                        principalValue=attribute;
+                        tipo = value.valor.tipo;
+                        direcciones=attribute.direcciones;
                     }
                 }
             }else if(temp.acc_type==TIPO_ACCESO.POSICION){//B
@@ -339,14 +335,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
             temp=temp.next_acc;
         }
-       /* if(principalValue.tipo.split("[]")[0]=="undefined"){
-            principalValue.valor=assignedValue.valor;
-            principalValue.tipo=assignedValue.tipo;
-        }else{
-            if(assignedValue.valor==null){
-                principalValue.valor=assignedValue.valor;
-                principalValue.tipo=assignedValue.tipo;
-            }else */
             if(tipo!=assignedValue.tipo){
                 consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';  
                 throw '>ERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';                
@@ -367,6 +355,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     function procesarImpresion(expresion, tablaDeSimbolos, ambito){
         const valores = procesarTexto(expresion, tablaDeSimbolos, ambito);
         consola.value+=toString(valores);
+        consola.value+="printf(\"\\n\");\n";
     }
     function procesarTexto(expresion, tablaDeSimbolos, ambito){
         if (expresion.sentencia === SENTENCIAS.LLAMADA) {
@@ -478,7 +467,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
             if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"%"+valorDer.valor+";\n";
+                consola.value+=temporal+"=fmod("+valorIzq.valor[0].valor+","+valorDer.valor[0].valor+");\n";
                 return {valor:temporal,tipo:"number"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de módulo con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -678,7 +667,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         if(elem.valor%1===0){
                             text+="printf(\"%d\", (int)"+elem.valor+");\n"; 
                         }else{
-                           text+="printf(\"%f\", (float)"+elem.valor+");\n"; 
+                           text+="printf(\"%f\", (double)"+elem.valor+");\n"; 
                         }
                     }else {
                         text+="printf(\"%f\", "+elem.valor+");\n";
@@ -922,7 +911,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
             if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"%"+valorDer.valor+";\n";
+                consola.value+=temporal+"=fmod("+valorIzq.valor+","+valorDer.valor+");\n";
                 return {valor:temporal,tipo:"number"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de módulo con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -1328,13 +1317,23 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     principalValue.valor=principalValue.valor+"["+valor.valor+"]";
                 }
             }else if(temp.sentencia==SENTENCIAS.LENGTH){//R
-                if(!Array.isArray(principalValue.valor)){
+                if(principalValue.tipo.split("[]").length>1 || principalValue.tipo =="string"){
+                    if(principalValue.tipo =="string"){
+                        consola.value+="t4="+principalValue.valor+";\n";
+                        let temporal = nuevoTemporal(), posicion = nuevoTemporal();
+                        consola.value+="strLength();\n"
+                        consola.value+=temporal+"= t4-"+principalValue.valor+";\n";
+                        consola.value+=posicion+"=h;\n"+pila+"[(int)"+posicion+"]="+temporal+";\n";
+                        principalValue.valor= posicion;
+                        principalValue.tipo="number";
+                    }               
+                }else{
                     // if(principalValue.tipo!=TIPO_DATO.ARRAY){
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: Intento de Length a un array inexistente.\n';  
                     printedTable.erEj.push({descripcion:'Intento de Length a un array inexistente.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
-                    throw '>ERROR: Intento de Length a un array inexistente.\n';                    
-                }
-                principalValue={valor:principalValue.valor.length, tipo:"number"};
+                    throw '>ERROR: Intento de Length a un array inexistente.\n';     
+                }                
+                //principalValue={valor:principalValue.valor.length, tipo:"number"};
                 break;
             }else if(temp.sentencia==SENTENCIAS.CHAR_AT){
                 if(principalValue.tipo!="string"){
@@ -1348,7 +1347,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     printedTable.erEj.push({descripcion:''+valor.tipo+' no se puede usar como un índice en CharAt',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                     throw '>ERROR: '+valor.tipo+' no se puede usar como un índice en CharAt.\n';                    
                 }
-                principalValue.valor=principalValue.valor.charAt(valor.valor);
+                let temporal1= nuevoTemporal(),temporal2 = nuevoTemporal(), temporal3=nuevoTemporal();
+                consola.value+=temporal1+"="+principalValue.valor+"+"+valor.valor+";\n";
+                consola.value+=temporal3+"=heap[(int)"+temporal1+"];\n";
+                consola.value+=temporal2+"=h;\nheap[(int)"+temporal2+"]="+temporal3+";\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\n"
+                principalValue.valor=temporal2;
                 break;
             }else if(temp.sentencia==SENTENCIAS.TO_LOWER_CASE){
                 if(principalValue.tipo!="string"){
@@ -1356,15 +1359,21 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     printedTable.erEj.push({descripcion:'No se puede realizar un toLowerCase en '+principalValue.tipo+'.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                     throw '>ERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';                    
                 }
-                principalValue.valor=principalValue.valor.toLowerCase();
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\nt0="+principalValue.valor+";\n";
+                consola.value+="toLowerCase();\n";
+                principalValue.valor=temporal;
                 break;
             }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
                 if(principalValue.tipo!="string"){
-                    consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';  
-                    printedTable.erEj.push({descripcion:'No se puede realizar un toUpperCase en '+principalValue.tipo+'.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
-                    throw '>ERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';                    
+                    consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';  
+                    printedTable.erEj.push({descripcion:'No se puede realizar un toLowerCase en '+principalValue.tipo+'.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
+                    throw '>ERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';                    
                 }
-                principalValue.valor=principalValue.valor.toUpperCase();
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\nt0="+principalValue.valor+";\n";
+                consola.value+="toUpperCase();\n";
+                principalValue.valor=temporal;
                 break;
             }else if(temp.sentencia==SENTENCIAS.CONCAT){
                 if(principalValue.tipo!="string"){
@@ -1373,12 +1382,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     throw '>ERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';                    
                 }
                 let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito);
-                if(valor.tipo!="string" && valor.tipo!="number" && valor.tipo!="boolean" ){
+                if(valor.tipo!="string"){
                     consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede concatenar '+valor.tipo+'.\n';  
                     printedTable.erEj.push({descripcion:'No se puede concatenar '+valor.tipo+'.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                     throw '>ERROR: No se puede concatenar '+valor.tipo+'.\n';                    
                 }
-                principalValue.valor=principalValue.valor.concat(valor.valor);
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+principalValue.valor+";\n";
+                consola.value+="t3="+valor.valor+";\n";
+                consola.value+="concatenar();\n";   
+                principalValue.valor=temporal;             
                 break;
             }
             temp=temp.next_acc;
@@ -1925,16 +1939,20 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "//t0=cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L3;\nL1: if(heap[(int)t0]>300) goto L2;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nprintf(\"%f\", heap[(int)t0]-300);\nt0=t0+1;\ngoto L0;\nL3:\nreturn;\n}";
+        let text = "//t0=cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L3;\nL1: if(heap[(int)t0]>300) goto L2;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nprintf(\"%f\", heap[(int)t0]-300);\nt0=t0+1;\ngoto L0;\nL3:\nreturn;\n}\n";
         //función para concatenar 2 strings
         text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
-        text+="//t4 es la cadena y t5 es el valor de retorno\nvoid getLength(){\nL0: if(t4!=-1) goto L1;\ngoto L2;\nL1: t5=t5+1;\nL2: return;\n}\n";
+        text+="//t4 es la cadena \nvoid strLength(){\nL0:\nif(heap[(int)t4]!=-1) goto L1;\ngoto L2;\nL1:\nt4=t4+1;\ngoto L0;\nL2:\n return;\n}\n";
         //funcion para concatenar una string y un numero 
         text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: \nheap[(int)h]=t3+300;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
-        //funcion apra concatenar un número y string
+        //funcion para concatenar un número y string
         text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nheap[(int)h]=t3+300;\nh=h+1;\nL1: if(heap[(int)t1]!=-1) goto L2;\ngoto L3;\nL2:\n t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL3:\nheap[(int)h]=-1;\nh=h+1;\n\nreturn;\n}\n";
+        //funcion toLowerCase
+        text+="//t0=inicio de cadena, t1=cambio de letra\nvoid toLowerCase(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L5;\nL1:\nif(heap[(int)t0]>=65) goto L2;\ngoto L3;\nL2:\nif(heap[(int)t0]<=90) goto L4;\nL3: \nt1=heap[(int)t0];\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL4:\nt1=heap[(int)t0];\nt1=t1+32;\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
+        //funcion toUpperCase
+        text+="//t0=inicio de cadena, t1=cambio de letra\nvoid toUpperCase(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L5;\nL1:\nif(heap[(int)t0]>=97) goto L2;\ngoto L3;\nL2:\nif(heap[(int)t0]<=122) goto L4;\nL3: \nt1=heap[(int)t0];\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL4:\nt1=heap[(int)t0];\nt1=t1-32;\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         return text;
     }
     function declararArregloC3D(arreglo){
@@ -1947,7 +1965,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return;
             case 2:
                 arrayName = nuevoArreglo(1);
-                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";
+                consola.value+=arrayName+"="+"(double *)malloc("+arreglo.direcciones.length+"*sizeof(double));\n";
                 for(let i =0;i<arreglo.direcciones.length;i++){
                     consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
                 }
@@ -1956,7 +1974,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return arrayName;
             case 3:
                 arrayName = nuevoArreglo(2);
-                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";
+                consola.value+=arrayName+"="+"(double *)malloc("+arreglo.direcciones.length+"*sizeof(double));\n";
                 for(let i =0;i<arreglo.direcciones.length;i++){
                     declararArregloC3D({direcciones:arreglo.direcciones[i], tipo:tipo});
                     consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
@@ -1965,7 +1983,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return arrayName;
             case 4:
                 arrayName = nuevoArreglo(3);
-                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";
+                consola.value+=arrayName+"="+"(double *)malloc("+arreglo.direcciones.length+"*sizeof(double));\n";
                 for(let i =0;i<arreglo.direcciones.length;i++){
                     declararArregloC3D({direcciones:arreglo.direcciones[i], tipo:tipo});
                     consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";
@@ -1974,7 +1992,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return arrayName;
             case 5:
                 arrayName = nuevoArreglo(4);
-                consola.value+=arrayName+"="+"(float *)malloc("+arreglo.direcciones.length+"*sizeof(float));\n";        
+                consola.value+=arrayName+"="+"(double *)malloc("+arreglo.direcciones.length+"*sizeof(double));\n";        
                 for(let i =0;i<arreglo.direcciones.length;i++){
                     declararArregloC3D({direcciones:arreglo.direcciones[i], tipo:tipo});
                     consola.value+=arrayName+"["+i+"]="+arreglo.direcciones[i]+";\n";

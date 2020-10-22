@@ -222,7 +222,25 @@ export default function UI() {
   }  
   function toString(simbolo){
     let text="";
-    if(simbolo.tipo.split("[]").length>1){
+    if(Array.isArray(simbolo.direcciones)){
+      text+="{";
+      for(let i = 0;i<simbolo.direcciones.length;i++){
+        if(simbolo.direcciones[i]!=null){
+          text+=simbolo.direcciones[i].id+":";
+          if(Array.isArray(simbolo.direcciones[i].direcciones)){
+            text+=toString({direcciones:simbolo.direcciones[i].direcciones});
+          }else{
+            text+=simbolo.direcciones[i].direcciones;
+          }
+        }else{
+          text+=simbolo.direcciones[i].id+":null";
+        }
+        if(i!=simbolo.direcciones.length-1){
+          text+=", ";
+        }
+      }
+      text+="}";
+    }else if(simbolo.tipo.split("[]").length>1){
       /*text+="[";
       for(let i = 0;i<simbolo.direcciones.length;i++){
         if(Array.isArray(simbolo.direcciones[i])){
@@ -241,25 +259,7 @@ export default function UI() {
       }
       text+="]";*/
       text+=simbolo.direcciones;
-    }else if(Array.isArray(simbolo.direcciones)){
-      text+="{";
-      for(let i = 0;i<simbolo.direcciones.length;i++){
-        if(simbolo.direcciones[i]!=null){
-          text+=simbolo.direcciones[i].id+":";
-          if(Array.isArray(simbolo.direcciones[i].direcciones)){
-            text+=toString(simbolo.direcciones[i].direcciones);
-          }else{
-            text+=simbolo.direcciones[i].direcciones;
-          }
-        }else{
-          text+=simbolo.direcciones[i].id+":null";
-        }
-        if(i!=simbolo.direcciones.length-1){
-          text+=", ";
-        }
-      }
-      text+="}";
-    }else{
+    } else{
       text+= simbolo.direcciones;
     }
     return text;
