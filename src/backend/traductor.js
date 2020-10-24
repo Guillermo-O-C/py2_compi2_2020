@@ -1,3 +1,4 @@
+import { ThumbUpAltSharp } from "@material-ui/icons";
 import { TS, TIPO_DATO, SENTENCIAS, TIPO_VARIABLE, TIPO_OPERACION, TIPO_VALOR, TIPO_ACCESO } from "./instrucciones";
 
 export default function Traucir(salida, consola, traduccion, printedTable, tablero){
@@ -333,19 +334,29 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 //consola.value+=principalValue.direcciones+"["+valor.valor+"]="+valor.valor;
                 let suma = nuevoTemporal(), temporal = nuevoTemporal();
                 consola.value+=suma+"="+valor.valor+"+1;\n";
-                consola.value+=temporal+"="+direcciones+"["+suma+"];\n";
-                direcciones=temporal;
+                consola.value+=temporal+"="+direcciones+"+"+suma+";\n";
+             //   if(tipo.split("[]").length>=1){
+                    direcciones=temporal; 
+              /*  }else{
+                    let temporal2 = nuevoTemporal();
+                    consola.value+=temporal2+"= heap[(int)"+temporal+"];\n";
+                    direcciones=temporal2;
+                }    */            
                 //principalValue.valor = assignedValue;
+                if(temp.next_acc!="Epsilon"){
+                    let temporal2 = nuevoTemporal();
+                    consola.value+=temporal2+"= heap[(int)"+temporal+"];\n";
+                    direcciones=temporal2;
+                }
             }else {
                 consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede asignar esta accion en esta asignación: '+temp+'\n';  
                 throw '>ERROR: No se puede asignar esta accion en esta asignación: '+temp+'\n';
             }
             temp=temp.next_acc;
+            
         }
-            if(tipo!=assignedValue.tipo){
-                consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';  
-                throw '>ERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';                
-            }else{
+            if(tipo==assignedValue.tipo || tipo.split("[]").length==assignedValue.tipo.split("[]").length && assignedValue.tipo.split("[]")[0]=="undefined"){
+                //la segunda condición es para ver si se le asigno un [] vacío
                 if(tipo=="number"||tipo=="boolean"){
                     //let temporal = nuevoTemporal();
                     let pila = (ambito=="Global")?"heap":"stack";
@@ -355,7 +366,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+="heap[(int)"+direcciones+"]="+assignedValue.valor+";\n";
                     //principalValue.direcciones=assignedValue.valor;
                 }
-               // principalValue.valor=assignedValue.valor;
+            }else{
+               // principalValue.valor=assignedValue.valor;}else
+                consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';  
+                throw '>ERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';                
             }
         //}
         //obtener el valor a cambiar y ver que  no sea const
@@ -1173,6 +1187,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             if(logica.tipo=="boolean"){
                 return logica.valor? procesarExpresionNumerica(expresion.result1, tablaDeSimbolos, ambito):procesarExpresionNumerica(expresion.result2, tablaDeSimbolos, ambito);
             }
+        } else if (expresion.tipo===TIPO_DATO.NEW_ARRAY){
+            let valor = procesarNewArray(expresion.expresion, tablaDeSimbolos, ambito, userType);
+            return valor;
         } else {
             throw 'ERROR: expresión numérica no válida: ' + expresion.valor;
         }
@@ -1203,29 +1220,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             tamanio++;
             temp=temp.next_data;
         }
-        /*while(temp!="Epsilon"){
-            let dir;//=pilas.heap
-            temporalBegin = contadores.temporales;
-            //heapPush();
-            let valor = procesarExpresionNumerica(temp.dato, tablaDeSimbolos, ambito, userType);
-            if(valor.tipo=="boolean"||valor.tipo=="number"){
-                dir=nuevoTemporal();
-                consola.value+=dir+"="+"h;\n";
-                consola.value+="heap[(int)"+dir+"]="+valor.valor+";\nh=h+1;\n";
-                direcciones.push(dir);
-            }else{
-                direcciones.push(valor.direcciones);
-                tipo=valor.tipo;
-            }            
-            temporal.push(valor);
-            temp=temp.next_data;
-            tamanio++;
-        }
-        */
         checkForMultyType(JSON.parse(JSON.stringify(temporal)), tablaDeSimbolos, ambito);
-        //consola.value+="//comienza declaración del arreglo en C3D\n";
-        //direcciones = declararArregloC3D({direcciones:direcciones, tipo:tipo+"[]"});
-        //consola.value+="//termina arreglo \n";
         return {tipo:getType(temporal)+calcularDimensiones(temporal), valor:"t"+arrayHead, direcciones:temporales[0]};
     }
     function checkForMultyType(arreglo, tablaDeSimbolos, ambito){
@@ -1345,7 +1340,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         //se lo cambio a esta parte porque si es un number o boolean no tiene por qué tener acceso a una posición o atributo o método
         if(principalValue.tipo =="number" || principalValue.tipo=="boolean"){
             let temporal = nuevoTemporal();
-            consola.value+=temporal+"="+pila+"[(int)"+principalValue.valor+"]";
+            consola.value+=temporal+"="+pila+"[(int)"+principalValue.valor+"];\n";
             principalValue.valor=temporal;
         }
         while(temp!="Epsilon"){
@@ -2171,5 +2166,28 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
         }
         return contador;
+    }
+    function procesarNewArray(largo, tablaDeSimbolos, ambito, userType){
+
+        consola.value+="//comienza arreglo newArray\n";
+        let valor = procesarExpresionNumerica(largo, tablaDeSimbolos, ambito, userType);
+        let tamanio=0,temporales=[],arrayHead=contadores.temporales+1;
+        temporales.push(nuevoTemporal());
+        consola.value+=temporales[tamanio]+"=h;\n";
+        consola.value+="h=h+1;\n"
+        tamanio++;
+        for(let i =0;i<valor.valor;i++){
+            temporales.push(nuevoTemporal());
+            consola.value+=temporales[tamanio]+"=h;\n";
+            consola.value+="h=h+1;\n";
+            tamanio++;
+        }
+        consola.value+="heap[(int)"+temporales[0]+"]="+(tamanio-1)+";\n";
+        tamanio=1;
+        for(let i =0;i<valor.valor;i++){
+            consola.value+="heap[(int)"+temporales[tamanio]+"]=0;\n";
+            tamanio++;
+        }
+        return {tipo:userType+"[]", valor:"t"+arrayHead, direcciones:temporales[0]};
     }
 }
