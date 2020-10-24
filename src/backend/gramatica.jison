@@ -156,8 +156,8 @@ instruccion
 	| id ASIGNACION_SUMA expresion PUNTO_COMA {$$=instruccionesAPI.nuevoAsignacioSuma($1, $3, @1.first_column, @1.first_line);}
 	| id ASIGNACION_RESTA expresion PUNTO_COMA {$$=instruccionesAPI.nuevoAsignacioResta($1, $3, @1.first_column, @1.first_line);}
 	| id PUNTO_COMA {$$=instruccionesAPI.nuevoAcceso($1);}
-	| R_BREAK PUNTO_COMA{$$=instruccionesAPI.nuevoBreak();}
-	| R_CONTINUE PUNTO_COMA {$$=instruccionesAPI.nuevoContinue();}
+	| R_BREAK PUNTO_COMA{$$=instruccionesAPI.nuevoBreak(@1.first_column, @1.first_line);}
+	| R_CONTINUE PUNTO_COMA {$$=instruccionesAPI.nuevoContinue(@1.first_column, @1.first_line);}
 //	| R_GRAFICAR_TS ABRIR_PARENTESIS CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoGraficarTS();}
 ;
 sentencias
@@ -182,8 +182,8 @@ sentencia
 	| id ASIGNACION_SUMA expresion PUNTO_COMA {$$=instruccionesAPI.nuevoAsignacioSuma($1, $3, @1.first_column, @1.first_line);}
 	| id ASIGNACION_RESTA expresion PUNTO_COMA {$$=instruccionesAPI.nuevoAsignacioResta($1, $3, @1.first_column, @1.first_line);}
 	| id PUNTO_COMA {$$=instruccionesAPI.nuevoAcceso($1, @1.first_column, @1.first_line);}
-	| R_BREAK PUNTO_COMA{$$=instruccionesAPI.nuevoBreak();}
-	| R_CONTINUE PUNTO_COMA {$$=instruccionesAPI.nuevoContinue();}
+	| R_BREAK PUNTO_COMA{$$=instruccionesAPI.nuevoBreak(@1.first_column, @1.first_line);}
+	| R_CONTINUE PUNTO_COMA {$$=instruccionesAPI.nuevoContinue(@1.first_column, @1.first_line);}
 //	| R_GRAFICAR_TS ABRIR_PARENTESIS CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoGraficarTS();}
 ;
 expresion

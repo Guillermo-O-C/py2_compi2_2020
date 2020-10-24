@@ -154,10 +154,10 @@ case 22:
 this.$=instruccionesAPI.nuevoAcceso($$[$0-1]);
 break;
 case 23: case 44:
-this.$=instruccionesAPI.nuevoBreak();
+this.$=instruccionesAPI.nuevoBreak(_$[$0-1].first_column, _$[$0-1].first_line);
 break;
 case 24: case 45:
-this.$=instruccionesAPI.nuevoContinue();
+this.$=instruccionesAPI.nuevoContinue(_$[$0-1].first_column, _$[$0-1].first_line);
 break;
 case 26:
  this.$ = [$$[$0]]; 

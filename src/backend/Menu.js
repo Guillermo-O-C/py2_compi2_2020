@@ -104,9 +104,6 @@ export default function UI() {
   }
   function Interpretar(){
     Desanidar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
-    if(reports.erTr.length>0){
-      
-    }
     tablero.innerHTML=document.createElement("div").innerHTML;
     Traducir(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports,  tablero);
   }

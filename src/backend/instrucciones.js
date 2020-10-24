@@ -588,14 +588,18 @@ const instruccionesAPI = {
             fila:fila
         };
     },
-    nuevoContinue:function(){
+    nuevoContinue:function(columna, fila){
         return{
-            sentencia:SENTENCIAS.CONTINUE
+            sentencia:SENTENCIAS.CONTINUE,
+            columna:columna,
+            fila:fila
         };
     },
-    nuevoBreak:function(){
+    nuevoBreak:function(columna, fila){
         return{
-            sentencia:SENTENCIAS.BREAK
+            sentencia:SENTENCIAS.BREAK,
+            columna:columna, 
+            fila:fila
         };
     },
     nuevoAcceso: function(id, columna, fila){
