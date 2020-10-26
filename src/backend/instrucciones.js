@@ -140,9 +140,9 @@ function crearType(id, atributos, fila, columna){
 }
 
 class TS {
-    constructor(simbolos, consola) {
+    constructor(simbolos, printedTable) {
         this._simbolos = simbolos;
-        this._consola=consola;
+        this._printedTable=printedTable;
     }
 
     agregar(var_type, id, tipo, ambito, fila, columna, direcciones) {
@@ -166,14 +166,16 @@ class TS {
             if(simbolo.tipo.split("[]")[0]=="undefined"){
                 simbolo.tipo=valor.tipo;
             }else{
-                this._consola.value+='ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + simbolo.tipo;
+                //this._consola.value+='ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + simbolo.tipo;
+                this._printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + simbolo.tipo,tipo:"semántico", linea:0, columna:0}); 
                 throw 'ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en ' + simbolo.tipo;
             }
             }
         if (simbolo){
             simbolo.valor = valor.valor;
         }else{
-            this._consola.value+='ERROR: variable: ' + id + ' no ha sido declarada.';
+            //this._consola.value+='ERROR: variable: ' + id + ' no ha sido declarada.';
+            this._printedTable.erEj.push({descripcion:'variable: ' + id + ' no ha sido declarada.', tipo:"semántico", linea:0, columna:0}); 
             throw 'ERROR: variable: ' + id + ' no ha sido declarada.';
         }
     }
@@ -181,17 +183,21 @@ class TS {
         const simbolo = this._simbolos.filter(simbolo => simbolo.id.toLowerCase() === id.toLowerCase())[0];
         if (simbolo) simbolo.valor = valor.valor;
         if (simbolo) simbolo.tipo = valor.tipo;
-        else {this._consola.value+='ERROR: variable: ' + id + ' no ha sido declarada.'; throw 'ERROR: variable: ' + id + ' no ha sido declarada.';}
+        else {
+            //this._consola+='ERROR: variable: ' + id + ' no ha sido declarada.';
+            this._printedTable.erEj.push({descripcion:' variable: ' + id + ' no ha sido declarada. ',tipo:"semántico", linea:0, columna:0}); 
+            throw 'ERROR: variable: ' + id + ' no ha sido declarada.';}
     }
 
     obtenerSimbolo(id, ambito, fila, columna) {
         for(let amb of ambito){
             const simbolo = this._simbolos.filter(simbolo => simbolo.id.toLowerCase() === id.toLowerCase() && amb==simbolo.ambito && simbolo.si =="variable")[0];
             if (simbolo){
-                return { valor: simbolo.direcciones, tipo: simbolo.tipo }
+                return { valor: simbolo.direcciones, tipo: simbolo.tipo, ambito:simbolo.ambito }
             };
         }
-        this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito[0]+'\nERROR: variable: ' + id + ' no ha sido declarada.';
+        //this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito[0]+'\nERROR: variable: ' + id + ' no ha sido declarada.';
+        this._printedTable.erEj.push({descripcion:'variable: ' + id + ' no ha sido declarada.',tipo:"semántico", linea:fila, columna:columna}); 
         throw 'ERROR: variable: ' + id + ' no ha sido declarada.';
     }
     getSimbol(id, ambito, fila, columna) {
@@ -199,7 +205,8 @@ class TS {
             const simbolo = this._simbolos.filter(simbolo => simbolo.id.toLowerCase() === id.toLowerCase() && amb==simbolo.ambito && simbolo.si=="variable")[0];
             if (simbolo) return simbolo;
         }
-        this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: variable: ' + id + ' no ha sido declarada.';
+        //this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: variable: ' + id + ' no ha sido declarada.';
+        this._printedTable.erEj.push({descripcion:'variable: ' + id + ' no ha sido declarada.', tipo:"semántico", linea:fila, columna:columna}); 
         throw 'ERROR: variable: ' + id + ' no ha sido declarada.';
     }
     obtenerFuncion(id, fila, columna, ambito) {
@@ -207,12 +214,20 @@ class TS {
         if (funcion){ 
                 return { tipo: funcion.tipo, parametros: funcion.parametros, accion: funcion.accion };
             }
-        else {this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: no existe ninguna función llamada: ' + id + '.'; throw 'ERROR: no existe ninguna función llamada: ' + id + '.';}
+        else {
+            //this._consola.value+='f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: no existe ninguna función llamada: ' + id + '.';
+            this._printedTable.erEj.push({descripcion:'no existe ninguna función llamada: ' + id + '.', tipo:"semántico", linea:fila, columna:columna}); 
+            throw 'ERROR: no existe ninguna función llamada: ' + id + '.';
+        }
     }
     obtenerType(id) {
         const type = this._simbolos.filter(simbolo => simbolo.id.toLowerCase() === id.toLowerCase() && simbolo.si=="type")[0];
         if (type) return { atributos:type.atributos };
-        else {this._consola.value+='ERROR: no existe ningun type llamado: ' + id + '.'; throw 'ERROR: no existe ningun type llamado: ' + id + '.';}
+        else {
+            //this._consola.value+='ERROR: no existe ningun type llamado: ' + id + '.'; 
+            this._printedTable.erEj.push({descripcion:'no existe ningun type llamado: ' + id + '.', tipo:"semántico", linea:0, columna:0}); 
+            throw 'ERROR: no existe ningun type llamado: ' + id + '.';
+        }
     }
     updateFuncionID(id,  newID, fila, columna) {
         const funcion = this._simbolos.filter(simbolo => simbolo.id.toLowerCase() === id.toLowerCase())[0];
@@ -221,14 +236,22 @@ class TS {
             funcion.id=newID;
             return true;
         }
-        else {this._consola.value+='f:'+fila+', c:'+columna+'\nERROR: no existe ninguna función llamada: ' + id + '.'; throw 'ERROR: no existe ninguna función llamada: ' + id + '.';}
+        else {
+           // this._consola.value+='f:'+fila+', c:'+columna+'\nERROR: no existe ninguna función llamada: ' + id + '.';
+            this._printedTable.erEj.push({descripcion:'no existe ninguna función llamada: ' + id + '.', tipo:"semántico", linea:fila, columna:columna});
+            throw 'ERROR: no existe ninguna función llamada: ' + id + '.';
+        }
     }
     changeOldIDCall(id, fila, columna){
         const funcion = this._simbolos.filter(simbolo => simbolo.oldID === id && simbolo.si=="funcion")[0];
         if (funcion) {
             return funcion.id;
         }
-        else {this._consola.value+='f:'+fila+', c:'+columna+'\nERROR: no existe ninguna función llamada: ' + id + '.'; throw 'ERROR: no existe ninguna función llamada: ' + id + '.';}
+        else {
+            //this._consola.value+='f:'+fila+', c:'+columna+'\nERROR: no existe ninguna función llamada: ' + id + '.';
+            this._printedTable.erEj.push({descripcion:'no existe ninguna función llamada: ' + id + '.', tipo:"semántico", linea:fila, columna:columna});
+            throw 'ERROR: no existe ninguna función llamada: ' + id + '.';
+        }
     }
     existe(id, ambito, si) {
         const simbolo = this._simbolos.filter(simbolo => simbolo.id.toLowerCase() === id.toLowerCase() && ambito == simbolo.ambito && si==simbolo.si)[0];
@@ -504,10 +527,12 @@ const instruccionesAPI = {
             opcional:opcional
         };
     },
-    nuevoReturn: function(valor) {
+    nuevoReturn: function(valor, columna, fila) {
         return {
             sentencia: SENTENCIAS.RETURN,
-            valor: valor
+            valor: valor,
+            columna:columna,
+            fila:fila
         };
     },
     nuevoArrayIndex: function(index, next_index){

@@ -149,7 +149,7 @@ instruccion
 	| R_DO ABRIR_LLAVE sentencias CERRAR_LLAVE R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoDoWhile($3, $7);}
 	| R_FUNCTION IDENTIFICADOR ABRIR_PARENTESIS parametros CERRAR_PARENTESIS DOS_PUNTOS tipo ABRIR_LLAVE instrucciones CERRAR_LLAVE {  $$ = instruccionesAPI.nuevaFuncion($7, $2, $4, $9, @2.first_line, @2.first_column); }
 	| IDENTIFICADOR ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line);}
-	| R_RETURN retorno PUNTO_COMA{$$=instruccionesAPI.nuevoReturn($2);}
+	| R_RETURN retorno PUNTO_COMA{$$=instruccionesAPI.nuevoReturn($2, @1.first_column, @1.first_line);}
 	| id IGUAL expresion PUNTO_COMA {$$ = instruccionesAPI.nuevaAsignacion($1, $3, @1.first_column, @1.first_line);}
 	| id INCREMENTO PUNTO_COMA{$$=instruccionesAPI.nuevoIncremento($1, @1.first_column, @1.first_line);}
 	| id DECREMENTO PUNTO_COMA{$$=instruccionesAPI.nuevoDecremento($1, @1.first_column, @1.first_line);}
@@ -175,7 +175,7 @@ sentencia
 	| R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoWhile($3, $6);}
 	| R_DO ABRIR_LLAVE sentencias CERRAR_LLAVE R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoDoWhile($3, $7);}
 	| IDENTIFICADOR ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line);}
-	| R_RETURN retorno PUNTO_COMA{$$=instruccionesAPI.nuevoReturn($2);}
+	| R_RETURN retorno PUNTO_COMA{$$=instruccionesAPI.nuevoReturn($2, @1.first_column, @1.first_line);}
 	| id IGUAL expresion PUNTO_COMA {$$ = instruccionesAPI.nuevaAsignacion($1, $3, @1.first_column, @1.first_line);}
 	| id INCREMENTO PUNTO_COMA{$$=instruccionesAPI.nuevoIncremento($1, $2, @1.first_column, @1.first_line);}
 	| id DECREMENTO PUNTO_COMA{$$=instruccionesAPI.nuevoDecremento($1, $2, @1.first_column, @1.first_line);}
