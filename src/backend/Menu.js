@@ -79,7 +79,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 const reports = {tsTr:[], erTr:[], tsEj:[], erEj:[]};
-const intros = {AST:[], entrada:"", salida:""};
+const intros = {AST:[], entrada:"", salida:"", desanidado:""};
 const tablero = document.createElement("div");
 var data;
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -105,7 +105,7 @@ export default function UI() {
   function Interpretar(){
     Desanidar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
     tablero.innerHTML=document.createElement("div").innerHTML;
-    Traducir(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports,  tablero);
+    Traducir(analizar(intros.desanidado), document.getElementById('consola'), intros.salida, reports,  tablero);
   }
   function prs(AST){
     let temp = {attributes:{} , children:[]};
@@ -126,8 +126,14 @@ export default function UI() {
   function CursosLocation(editor){
     document.getElementById('posicion').innerHTML="Línea:"+(editor.getCursor().line+1)+" Columna:"+editor.getCursor().ch;
   }
-  function EntryValue(value){
-    intros.entrada=value;
+  function EntryValue(value, index){
+    switch(index){
+      case 1:
+        intros.entrada=value;
+        break;
+      case 2:
+        intros.desanidado=value;
+    }
   }
   function populateTableTsTr(tablaDeSimbolos){
       var row0 =  document.getElementById('tablaDeSalida').insertRow( document.getElementById('tablaDeSalida').rows.length);
@@ -475,7 +481,7 @@ export default function UI() {
                   theme: 'mbo',
                   lineNumbers: true
               }}
-              onChange={(editor, data, value) => {EntryValue(value)}}
+              onChange={(editor, data, value) => {EntryValue(value, 1)}}
               onCursorActivity={(editor, data, value)=>{CursosLocation(editor)}}
           />
           <p id="posicion" className={classes.p}>Línea:- Columna:-</p>
@@ -493,7 +499,7 @@ export default function UI() {
                 readOnly: true,
                 indentAutoShift:true
             }}
-            onChange={(editor, data, value) => {            }}
+            onChange={(editor, data, value) => {EntryValue(value, 2)}}
             editorDidMount={(editor)=>translationConsole(editor)}
         />
         </Grid>
