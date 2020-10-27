@@ -1615,8 +1615,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=instruccion.id+"();\n";
                     if(funcion.tipo!="void"){
                         let temporal=nuevoTemporal();
-                        consola.value+=temporal+"=stack[(int)p];\np=p+1;\n"
+                        consola.value+=temporal+"=stack[(int)p];\np="+apuntador+"+1;\n";
                         return {valor:temporal, tipo:funcion.tipo};
+                    }else{
+                        consola.value+="p="+apuntador+";\n";
                     }
                 //declarar parámetros con los valores de los argumentos
             }
@@ -2243,6 +2245,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         for(let i =0;i<funcion.parametros.length;i++){
             let temporal =nuevoTemporal(), temporal2=nuevoTemporal();
             consola.value+=temporal+"="+puntero+"+"+(i+1)+";\n";
+            consola.value+="p=p+1;"
             //consola.value+=temporal2+"=stack[(int)"+temporal+"];\n";
             tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, funcion.parametros[i].id, funcion.parametros[i].tipo, id, "temp", "temp", temporal);
         }
