@@ -388,6 +388,9 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
             }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
                 text+=".toUpperCase()";
                 break;
+            }else if(temp.sentencia==SENTENCIAS.CHAR_AT){
+                text+=".CharAt("+procesarExpresionNumerica(temp.valor, tablaDeSimbolos)+")";
+                break;
             }
             temp=temp.next_acc;
         }

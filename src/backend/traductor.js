@@ -1537,12 +1537,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         let temporal = nuevoTemporal(), posicion = nuevoTemporal();
                         consola.value+="strLength();\n"
                         consola.value+=temporal+"= t4-"+principalValue.valor+";\n";
-                        consola.value+=posicion+"=h;\n"+pila+"[(int)"+posicion+"]="+temporal+";\n";
-                        principalValue.valor= posicion;
+                        //consola.value+=posicion+"=h;\n"+pila+"[(int)"+posicion+"]="+temporal+";\n";
+                        principalValue.valor= temporal;
                         principalValue.tipo="number";
                     }else{
                         let temporal = nuevoTemporal();
-                        consola.value+=temporal+"="+principalValue.valor+";\n";
+                        consola.value+=temporal+"=heap[(int)"+principalValue.valor+"];//en la posición 0 está el size\n";
                         principalValue.valor=temporal;
                         principalValue.tipo="number";
                     }            
@@ -1930,13 +1930,36 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
     
     }
-    function procesarForOF(instruccion, tablaDeSimbolos, ambito){
+    function procesarForOF(instruccion, tablaDeSimbolos, ambito, retorno){
         let conjunto = procesarExpresionNumerica(instruccion.conjunto, tablaDeSimbolos, ambito);
-        if(conjunto.tipo.split("[]").length>1){
+        if(conjunto.tipo.split("[]").length==1){
             consola.value+='>ERROR: '+conjunto.id+' no es un array.\n';  
             throw '>ERROR: '+conjunto.id+' no es un array.\n';               
         }
-        tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, "infer",  "undefined", ambito, "temp", "temp");
+        let temporal1 = nuevoTemporal(), size=nuevoTemporal(), temporal2=nuevoTemporal(), temporal3= nuevoTemporal(), temporal4= nuevoTemporal(),inicio = nuevaEtiqueta(), actualizacion =  nuevaEtiqueta(), ejecucion = nuevaEtiqueta(), final = nuevaEtiqueta();
+        consola.value+=temporal1+"=-1;\n";
+        consola.value+=size+"=heap[(int)"+conjunto.valor+"];\n";
+        consola.value+="goto "+actualizacion+";\n";
+        consola.value+=inicio+":\n";        
+        consola.value+="if("+temporal1+"<"+size+") goto "+ejecucion+";\n";
+        consola.value+="goto "+final+";\n";
+        consola.value+=actualizacion+":\n";
+        consola.value+=temporal1+"="+temporal1+"+1;\n";
+        consola.value+=temporal2+"="+conjunto.valor+"+1;\n";
+        consola.value+=temporal3+"="+temporal1+"+"+temporal2+";\n";
+        consola.value+=temporal4+"=heap[(int)"+temporal3+"];\n";
+        consola.value+="goto "+inicio+";\n";
+        let tipo ="";
+        for(let i = 0; i<conjunto.tipo.split("[]").length-1;i++){
+            tipo+=conjunto.tipo.split("[]")[i];
+        }
+        tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, tipo, ambito, "temp", "temp", temporal3);
+        consola.value+=ejecucion+":\n";
+        const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), printedTable); 
+        procesarBloque(instruccion.accion, tsFor, ambito, actualizacion, final, retorno);
+        consola.value+="goto "+actualizacion+";\n";
+        consola.value+=final+":\n";
+        /*tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, "infer",  "undefined", ambito, "temp", "temp");
         for(let val of conjunto.valor){
             tablaDeSimbolos.actualizarAndType(instruccion.variable, val);
             const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), printedTable); 
@@ -1950,7 +1973,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     return returnedAcction;
                 } 
             }
-        }
+        }*/
     }
     function procesarForIn(instruccion, tablaDeSimbolos, ambito){
         let conjunto = procesarAccID(instruccion.conjunto, tablaDeSimbolos, ambito);
