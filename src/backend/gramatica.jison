@@ -143,8 +143,8 @@ instruccion
 	| R_CONSOLE PUNTO R_LOG ABRIR_PARENTESIS impresion CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevoImprimir($5);}
 	| R_SWITCH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE cases CERRAR_LLAVE {$$=instruccionesAPI.nuevoSwitch($3, $6);}
 	| R_FOR ABRIR_PARENTESIS for_init expresion PUNTO_COMA IDENTIFICADOR for_change CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE { $$ = instruccionesAPI.nuevoFor($3, $4, {id:$6, paso:$7}, $10);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_OF expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4, $6, $9);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_IN expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $6, $9);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR definicion_tipo R_OF expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4,$5,  $7, $10);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR definicion_tipo R_IN expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $5, $7, $10);}
 	| R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoWhile($3, $6);}
 	| R_DO ABRIR_LLAVE sentencias CERRAR_LLAVE R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoDoWhile($3, $7);}
 	| R_FUNCTION IDENTIFICADOR ABRIR_PARENTESIS parametros CERRAR_PARENTESIS DOS_PUNTOS tipo ABRIR_LLAVE instrucciones CERRAR_LLAVE {  $$ = instruccionesAPI.nuevaFuncion($7, $2, $4, $9, @2.first_line, @2.first_column); }
@@ -167,11 +167,11 @@ sentencias
 sentencia
 	: declaracion {$$=$1;}
 	| R_IF ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE elseIf { $$ = instruccionesAPI.nuevoIf($3, $6, $8);}
-	| R_CONSOLE PUNTO R_LOG ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevoImprimir($5);}
+	| R_CONSOLE PUNTO R_LOG ABRIR_PARENTESIS impresion CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevoImprimir($5);}
 	| R_SWITCH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE cases CERRAR_LLAVE {$$=instruccionesAPI.nuevoSwitch($3, $6);}
 	| R_FOR ABRIR_PARENTESIS for_init expresion PUNTO_COMA IDENTIFICADOR for_change CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE { $$ = instruccionesAPI.nuevoFor($3, $4, {id:$6, paso:$7}, $10);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_OF expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4, $6, $9);}
-	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR R_IN expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $6, $9);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR definicion_tipo R_OF expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForOF($4,$5,  $7, $10);}
+	| R_FOR ABRIR_PARENTESIS R_LET IDENTIFICADOR definicion_tipo R_IN expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoForIn($4, $5, $7, $10);}
 	| R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS ABRIR_LLAVE sentencias CERRAR_LLAVE {$$=instruccionesAPI.nuevoWhile($3, $6);}
 	| R_DO ABRIR_LLAVE sentencias CERRAR_LLAVE R_WHILE ABRIR_PARENTESIS expresion CERRAR_PARENTESIS PUNTO_COMA {$$=instruccionesAPI.nuevoDoWhile($3, $7);}
 	| IDENTIFICADOR ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS PUNTO_COMA {$$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line);}

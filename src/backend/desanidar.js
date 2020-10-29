@@ -208,6 +208,10 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
         } else if (expresion.tipo === TIPO_OPERACION.NOT) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos);
             return "(!"+valorIzq+")";
+        }else if(expresion.tipo===TIPO_OPERACION.CONCATENACION){
+            const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos);
+            const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos);
+            return "("+valorIzq+", "+valorDer+")";
         } else if (expresion.tipo === TIPO_VALOR.NUMERO) {
             return expresion.valor;
         }else if (expresion.tipo === TIPO_VALOR.DECIMAL) {
@@ -418,12 +422,32 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
         output+=procesarIdentificador(instruccion.id, tablaDeSimbolos)+"="+procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos)+";";
     }
     function procecsarForOf(instruccion, tablaDeSimbolos, ambito){
-        output+="for(let "+instruccion.variable+" of "+procesarExpresionNumerica(instruccion.conjunto)+"){\n";
+        let tipo = "";
+        let temp=instruccion.tipo;
+        tipo+=Data_Type(temp.tipo);
+        if(temp.isArray!=false){
+            let temporal = temp.isArray;
+            while(temporal.dimension===true){
+                tipo+="[]";
+                temporal=temporal.next_dimension;
+            }
+        } 
+        output+="for(let "+instruccion.variable+":"+tipo+" of "+procesarExpresionNumerica(instruccion.conjunto)+"){\n";
         procesarBloque(instruccion.accion, tablaDeSimbolos, ambito);
         output+="}";
     }
     function procesarForIn(instruccion, tablaDeSimbolos, ambito){
-        output+="for(let "+instruccion.variable+" in "+procesarExpresionNumerica(instruccion.conjunto)+"){\n";
+        let tipo = "";
+        let temp=instruccion.tipo;
+        tipo+=Data_Type(temp.tipo);
+        if(temp.isArray!=false){
+            let temporal = temp.isArray;
+            while(temporal.dimension===true){
+                tipo+="[]";
+                temporal=temporal.next_dimension;
+            }
+        } 
+        output+="for(let "+instruccion.variable+":"+tipo+" in "+procesarExpresionNumerica(instruccion.conjunto)+"){\n";
         procesarBloque(instruccion.accion, tablaDeSimbolos, ambito);
         output+="}";
     }

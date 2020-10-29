@@ -31,7 +31,6 @@ const TIPO_OPERACION = {
     AND: 'AND',
     OR: 'OR',
     NOT: 'NOT',
-    CONCATENACION:'CONCATENACION'
 };
 const SENTENCIAS = {
     CLASE: 'CLASE',
@@ -455,20 +454,22 @@ const instruccionesAPI = {
             accion: sentencias
         };
     },
-    nuevoForOF:function(variable,conjunto,  accion){
+    nuevoForOF:function(variable, tipo,conjunto,  accion){
         return{
             sentencia:SENTENCIAS.FOR_OF,
             conjunto:conjunto,
             variable:variable,
-            accion:accion
+            accion:accion,
+            tipo:tipo
         };
     },
-    nuevoForIn:function(variable,conjunto,  accion){
+    nuevoForIn:function(variable,tipo,conjunto,  accion){
         return{
             sentencia:SENTENCIAS.FOR_IN,
             conjunto:conjunto,
             variable:variable,
-            accion:accion
+            accion:accion,
+            tipo:tipo
         };
     },
     nuevoWhile:function(logica, accion){
