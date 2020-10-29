@@ -1936,7 +1936,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             consola.value+='>ERROR: '+conjunto.id+' no es un array.\n';  
             throw '>ERROR: '+conjunto.id+' no es un array.\n';               
         }
-        let temporal1 = nuevoTemporal(), size=nuevoTemporal(), temporal2=nuevoTemporal(), temporal3= nuevoTemporal(), temporal4= nuevoTemporal(),inicio = nuevaEtiqueta(), actualizacion =  nuevaEtiqueta(), ejecucion = nuevaEtiqueta(), final = nuevaEtiqueta();
+        let temporal1 = nuevoTemporal(), size=nuevoTemporal(), temporal2=nuevoTemporal(), temporal3= nuevoTemporal(),inicio = nuevaEtiqueta(), actualizacion =  nuevaEtiqueta(), ejecucion = nuevaEtiqueta(), final = nuevaEtiqueta();
+        consola.value+="//comienza For Of\n";
         consola.value+=temporal1+"=-1;\n";
         consola.value+=size+"=heap[(int)"+conjunto.valor+"];\n";
         consola.value+="goto "+actualizacion+";\n";
@@ -1946,56 +1947,60 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         consola.value+=actualizacion+":\n";
         consola.value+=temporal1+"="+temporal1+"+1;\n";
         consola.value+=temporal2+"="+conjunto.valor+"+1;\n";
-        consola.value+=temporal3+"="+temporal1+"+"+temporal2+";\n";
-        consola.value+=temporal4+"=heap[(int)"+temporal3+"];\n";
-        consola.value+="goto "+inicio+";\n";
+        consola.value+=temporal3+"="+temporal1+"+"+temporal2+";\n";  
         let tipo ="";
         for(let i = 0; i<conjunto.tipo.split("[]").length-1;i++){
-            tipo+=conjunto.tipo.split("[]")[i];
+            if(i==0)tipo+=conjunto.tipo.split("[]")[i];
+            else tipo+="[]";
+        }      
+        if(tipo.split("[]").length>1){
+            let temporal4 = nuevoTemporal();
+            consola.value+=temporal4+"=heap[(int)"+temporal3+"];\n";
+            tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, tipo, "Global", "temp", "temp", temporal4);
+        }else{
+            if(tipo.toLowerCase()=="number" || tipo.toLowerCase()=="boolean"){
+                tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, tipo, "Global", "temp", "temp", temporal3);
+            }else{
+                let temporal4 = nuevoTemporal();
+                consola.value+=temporal4+"=heap[(int)"+temporal3+"];\n";
+                tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, tipo, "Global", "temp", "temp", temporal4);
+            }
         }
-        tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, tipo, ambito, "temp", "temp", temporal3);
+        consola.value+="goto "+inicio+";\n";
+        //se pasa el ámbito como global para que si son number/bollean los busque en el hea
         consola.value+=ejecucion+":\n";
         const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), printedTable); 
         procesarBloque(instruccion.accion, tsFor, ambito, actualizacion, final, retorno);
         consola.value+="goto "+actualizacion+";\n";
         consola.value+=final+":\n";
-        /*tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, "infer",  "undefined", ambito, "temp", "temp");
-        for(let val of conjunto.valor){
-            tablaDeSimbolos.actualizarAndType(instruccion.variable, val);
-            const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), printedTable); 
-            let returnedAcction = procesarBloque(instruccion.accion, tsFor, ambito);
-            if(returnedAcction!=undefined){
-                if(returnedAcction.sentencia==SENTENCIAS.BREAK){
-                    break;
-                }else if(returnedAcction.sentencia==SENTENCIAS.CONTINUE){
-                    continue;
-                }else{
-                    return returnedAcction;
-                } 
-            }
-        }*/
     }
-    function procesarForIn(instruccion, tablaDeSimbolos, ambito){
-        let conjunto = procesarAccID(instruccion.conjunto, tablaDeSimbolos, ambito);
-        if(!Array.isArray(conjunto.valor)){
+    function procesarForIn(instruccion, tablaDeSimbolos, ambito, retorno){
+        let conjunto = procesarExpresionNumerica(instruccion.conjunto, tablaDeSimbolos, ambito);
+        if(conjunto.tipo.split("[]").length==1){
             consola.value+='>ERROR: '+conjunto.id+' no es un array.\n';  
             throw '>ERROR: '+conjunto.id+' no es un array.\n';               
         }
-        tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, "infer",  "undefined", ambito, "temp", "temp");
-        for(let val in conjunto.valor){
-            tablaDeSimbolos.actualizarAndType(instruccion.variable, {valor:val, tipo:"number"});
-            const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), printedTable); 
-            let returnedAcction = procesarBloque(instruccion.accion, tsFor, ambito);
-            if(returnedAcction!=undefined){
-                if(returnedAcction.sentencia==SENTENCIAS.BREAK){
-                    break;
-                }else if(returnedAcction.sentencia==SENTENCIAS.CONTINUE){
-                    continue;
-                }else{
-                    return returnedAcction;
-                } 
-            }
-        }
+        let temporal2=nuevoTemporal(),temporal3=nuevoTemporal(),temporal4=nuevoTemporal(), size=nuevoTemporal(),inicio = nuevaEtiqueta(), actualizacion =  nuevaEtiqueta(), ejecucion = nuevaEtiqueta(), final = nuevaEtiqueta();
+        consola.value+="//comienza For In\n";
+        consola.value+=temporal2+"=h;\n";
+        consola.value+="heap[(int)"+temporal2+"]=-1;\nh=h+1;";
+        consola.value+=size+"=heap[(int)"+conjunto.valor+"];\n";
+        consola.value+="goto "+actualizacion+";\n";
+        consola.value+=inicio+":\n";
+        consola.value+=temporal4+"=heap[(int)"+temporal2+"];\n";        
+        consola.value+="if("+temporal4+"<"+size+") goto "+ejecucion+";\n";
+        consola.value+="goto "+final+";\n";
+        consola.value+=actualizacion+":\n";
+        consola.value+=temporal3+"=heap[(int)"+temporal2+"];\n";
+        consola.value+="heap[(int)"+temporal2+"]="+temporal3+"+1;\n";
+        tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, "number", "Global", "temp", "temp", temporal2);
+        consola.value+="goto "+inicio+";\n";
+        //se pasa el ámbito como global para que si son number/bollean los busque en el hea
+        consola.value+=ejecucion+":\n";
+        const tsFor = new TS(tablaDeSimbolos.simbolos.slice(), printedTable); 
+        procesarBloque(instruccion.accion, tsFor, ambito, actualizacion, final, retorno);
+        consola.value+="goto "+actualizacion+";\n";
+        consola.value+=final+":\n";
     }
     function procesarWhile(instruccion ,tablaDeSimbolos, ambito, retorno){
         let inicio = nuevaEtiqueta(), verdadero=nuevaEtiqueta(), falso= nuevaEtiqueta();
