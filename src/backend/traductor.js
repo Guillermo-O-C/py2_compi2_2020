@@ -10,20 +10,24 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
    let functionDeclaration="", funcionesTraducidas=[];
    printedTable.erEj=salida.ErrArr;
    const tsGlobal = new TS([], printedTable);
+   const FuncionesC3D = [];
    try {
        consola.value="";
         setSalida(salida.Errores);       
         scanForTypes(salida.AST, tsGlobal); 
         scanForFunctions(salida.AST, tsGlobal, "Global");
-        consola.value="void main()\n{\n";
+        consola.value="";
         procesarBloque(salida.AST, tsGlobal, "Global");
-        let mainContent =  consola.value;
+        let mainContent = consola.value;
+        FuncionesC3D.push({id:"main", c3d:mainContent});
+        mainContent="void main()\n{\n"+ mainContent;
         consola.value="";
         //importFunctions(salida.AST, tsGlobal, "Global");
         importFunctions();
-        consola.value="#include <stdio.h> //Importar para el uso de Printf\n\n#include <math.h>//Importa fmod\ndouble heap[16384]; //Estructura para heap\ndouble stack[16394]; //Estructura para stack\ndouble p; //Puntero P\ndouble h; //Puntero H\ndouble "+printTemporales()+funcionesNativas()+functionDeclaration+ mainContent+"\nreturn;\n}\n";
+        consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <math.h>//Importa fmod\ndouble heap[10000000]; //Estructura para heap\ndouble stack[16394]; //Estructura para stack\ndouble p; //Puntero P\ndouble h; //Puntero H\ndouble "+printTemporales()+funcionesNativas()+functionDeclaration+ mainContent+"\nreturn;\n}\n";
         //traduccion.setValue(output);
-        console.log(tsGlobal);
+        console.log(tsGlobal._tablaSimbolos);
+        //console.log(FuncionesC3D)
         sendTable(tsGlobal);
     } catch (e) {
         console.error(e);
@@ -291,8 +295,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             throw '>ERROR:  No se puede asignar a ' + instruccion.id.id+' porque es una constante.\n';   
         }
         let assignedValue = procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos, ambito, principalValue.tipo);
-        let temp = instruccion.id.acc, tipo =principalValue.tipo, direcciones=principalValue.direcciones, pila = (ambito=="Global")?"heap":"stack";
-       
+        let temp = instruccion.id.acc, tipo =principalValue.tipo, direcciones=principalValue.direcciones, pila;
+        if(ambito=="Global"||principalValue.ambito=="Global"&&principalValue.tipo=="number"||principalValue.ambito=="Global"&&principalValue.tipo=="boolean"){
+            pila="heap";
+        }else{
+            pila="stack";
+        }
         while(temp!="Epsilon"){
             pila="heap";//se direcciona a el heap porque procede de un objeto o un array
             if(temp.acc_type==TIPO_ACCESO.ATRIBUTO){//B
@@ -2296,23 +2304,27 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
     }
     function traducirFunciones(id, tablaDeSimbolos){
-        consola.value+="void "+id+"(){\n";
         let tamanio =0, funcion = tsGlobal.obtenerFuncion(id, 0, 0, "Global"), puntero=nuevoTemporal(),label = nuevaEtiqueta();
         consola.value+="//Comienza a declarar los parámetros\n";
         consola.value+=puntero+"=p;\n";
         for(let i =0;i<funcion.parametros.length;i++){
             let temporal =nuevoTemporal(), temporal2=nuevoTemporal();
             consola.value+=temporal+"="+puntero+"+"+(i+1)+";\n";
-            consola.value+="p=p+1;"
+            consola.value+="p=p+1;\n"
             //consola.value+=temporal2+"=stack[(int)"+temporal+"];\n";
             tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, funcion.parametros[i].id, funcion.parametros[i].tipo, id, "temp", "temp", temporal);
+        }
+        if(funcion.parametros.length!=0){
+            consola.value+="p=p+1;";
+            consola.value+="//se adelanta el puntero para las variables del entorno\n";
         }
         consola.value+="//termina de declarar los parámetros\n";
         tamanio+=countDeclarations(funcion.accion);
         procesarBloque(funcion.accion, tablaDeSimbolos,id, undefined, undefined, label);
        // printedTable.erEj=[];
-        consola.value+=/*"goto "+label+";\n"+*/label+":\nreturn;\n}\n";
-        functionDeclaration=consola.value+functionDeclaration;
+        consola.value+=label+":\nreturn;";
+        FuncionesC3D.push({id:id, c3d:consola.value});
+        functionDeclaration="void "+id+"(){\n"+consola.value+"\n}\n"+functionDeclaration;
         consola.value="";
     }
     function countDeclarations(instrucciones){
@@ -2347,21 +2359,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
         return {tipo:"newArray_"+userType, valor:"t"+arrayHead, direcciones:temporales[0]};
     }
-   /* function importFunctions(instrucciones, tablaDeSimbolos, ambito){
-        for(let instruccion of instrucciones){
-                if(instruccion.sentencia==SENTENCIAS.FUNCION){
-                    if(ambito=="Global"){ 
-                        const tsFuncion = new TS(JSON.parse(JSON.stringify(tablaDeSimbolos._simbolos)), printedTable);
-                        traducirFunciones(instruccion.id,tsFuncion, ambito);
-                        funcionesTraducidas.push(instruccion.id);
-                        importFunctions(instruccion.accion, tsFuncion, instruccion.id);
-                    }else{      
-                        consola.value+='f:'+instruccion.fila+', c:'+instruccion.columna+'\n>ERROR: Funciones anidadas en la función:'+ambito;  
-                        throw '>ERROR: Funciones anidadas en la función:'+ambito;
-                    } 
-                }  
-        }    
-    }*/
     function importFunctions(){
         funcionesTraducidas = []
         for(let funcion of tsGlobal._simbolos){
