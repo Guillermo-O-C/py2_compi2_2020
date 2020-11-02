@@ -26,7 +26,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         importFunctions();
         consola.value="#include <stdio.h> //Importar para el uso de Printf\n#include <math.h>//Importa fmod\ndouble heap[10000000]; //Estructura para heap\ndouble stack[16394]; //Estructura para stack\ndouble p; //Puntero P\ndouble h; //Puntero H\ndouble "+printTemporales()+funcionesNativas()+functionDeclaration+ mainContent+"\nreturn;\n}\n";
         //traduccion.setValue(output);
-        console.log(tsGlobal._tablaSimbolos);
+        console.log(tsGlobal._simbolos);
         //console.log(FuncionesC3D)
         sendTable(tsGlobal);
     } catch (e) {
@@ -257,7 +257,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             dimension+="[]";
             temp=temp.next_dimension;
         }
-        return data_description.tipo+dimension;
+        return data_description.tipo.toLowerCase()+dimension;
     }
     function primitive_Data(tipo){
         if (tipo === TIPO_DATO.NUMBER) {
@@ -269,7 +269,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }else if (tipo === TIPO_DATO.VOID) {    
             return "void";
         }else{
-            return tipo;
+            return tipo.toLowerCase();
         }
     }
     function procesarParametros(parametros){
@@ -300,6 +300,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             pila="heap";
         }else{
             pila="stack";
+        }
+        if(pila=="stack" && temp !="Epsilon" && tipo!="number" && tipo!="boolean"){
+            let temporal = nuevoTemporal(), temporal2=nuevoTemporal();
+            consola.value+=temporal+"=stack[(int)"+direcciones+"];\n";//dirección en el heap
+            //consola.value+=temporal2+"=heap[(int)"+temporal+"];\n";
+            direcciones=temporal;
         }
         while(temp!="Epsilon"){
             pila="heap";//se direcciona a el heap porque procede de un objeto o un array
@@ -342,18 +348,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     else tempTipo+="[]";
                 }
                 tipo=tempTipo;
-                //consola.value+=principalValue.direcciones+"["+valor.valor+"]="+valor.valor;
                 let suma = nuevoTemporal(), temporal = nuevoTemporal();
                 consola.value+=suma+"="+valor.valor+"+1;\n";
                 consola.value+=temporal+"="+direcciones+"+"+suma+";\n";
-             //   if(tipo.split("[]").length>=1){
-                    direcciones=temporal; 
-              /*  }else{
-                    let temporal2 = nuevoTemporal();
-                    consola.value+=temporal2+"= heap[(int)"+temporal+"];\n";
-                    direcciones=temporal2;
-                }    */            
-                //principalValue.valor = assignedValue;
+                direcciones=temporal; 
                 if(temp.next_acc!="Epsilon"){
                     let temporal2 = nuevoTemporal();
                     consola.value+=temporal2+"= heap[(int)"+temporal+"];\n";
@@ -379,7 +377,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }else{
                 if(principalValue.tipo==assignedValue.tipo){
                     if(tipo=="string"){
-                        consola.value+=principalValue.direcciones+"="+assignedValue.valor+";\n";
+                        if(principalValue.ambito!="Global"){
+                            consola.value+="stack[(int)"+principalValue.direcciones+"]="+assignedValue.valor+";\n";
+                        }else{
+                            consola.value+=principalValue.direcciones+"="+assignedValue.valor+";\n";
+                        }
                     }else{
                         principalValue.direcciones=assignedValue.valor;
                     }
@@ -512,7 +514,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+="t0="+valorIzq.valor[0].valor+";\n";
                 consola.value+="t3="+valorIzq.valor[0].valor+";\n";
                 consola.value+="t1="+valorDer.valor[0].valor+";\n";
-                consola.value+="potencia();";
+                consola.value+="potencia();\n";
                 consola.value+=temporal+"=t0;\n";
                 return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
             }else{
@@ -730,6 +732,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             return {valor:[{valor:"1", tipo:"boolean"}], tipo:"boolean"};
         } else if (expresion.tipo === TIPO_VALOR.FALSE) {
             return {valor:[{valor:"0", tipo:"boolean"}], tipo:"boolean"};
+        } else if (expresion.tipo === TIPO_VALOR.NULL) {
+            return { valor: [{ valor: "0", tipo: undefined}], tipo: undefined};
         } else if (expresion.tipo === TIPO_VALOR.IDENTIFICADOR) {
             const valIzq=procesarAccID(expresion.valor, tablaDeSimbolos, ambito);
             return  {valor:[valIzq], tipo:valIzq.tipo};
@@ -778,7 +782,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:[{valor:temporal, tipo:valorVerdadero.tipo}], tipo:valorVerdadero.tipo};
             }
         } else {
-            throw 'ERROR: expresión numérica no válida: ' + expresion.valor[0].valor;
+            printedTable.erEj.push({descripcion:'expresión no válida: ' + expresion.valor[0].valor,ambito:ambito,tipo:"semántico", linea:"temp", columna:"temp"});
+            throw 'ERROR: expresión no válida: ' + expresion.valor[0].valor;
         }
     }
     function toString(cadena, tablaDeSimbolos, ambito){
@@ -825,14 +830,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             printedTable.erEj.push({descripcion:'No existe el tipo de dato:'+data_type.split("[]")[0]+'.',tipo:"semántico", linea:fila, columna:columna,ambito:ambito});
             throw '>ERROR: No existe el tipo de dato:'+data_type.split("[]")[0]+'.'; 
         }
-        
         //Verificar que no exista en el mismo ámbito
         if(tablaDeSimbolos.existe(id, ambito, "variable")){
             //consola.value+='>f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: El identificador:\"'+id+'\" ya ha sido declarado en este ámbito.\n';  
             printedTable.erEj.push({descripcion:'El identificador:\"'+id+'\" ya ha sido declarado en este ámbito',tipo:"semántico", linea:fila, columna:columna,ambito:ambito});
             throw '>ERROR: El identificador:\"'+id+'\" ya ha sido declarado en este ámbito'; 
         }
-        
         //Ver que el tipo de símbolo sea el correcto con el del valor o undefined
         if(var_type==TIPO_VARIABLE.CONST && valor == "undefined"){
             //consola.value+='>f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: La delcaracion de la constante '+id+' debe ser inicializada.\n';  
@@ -876,18 +879,22 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }
             }
         }else{
+            let pila = (ambito=="Global")?"heap":"stack", puntero=(ambito=="Global")?"h":"p";
             if(data_type=="number"){
-                valor={valor:0,tipo:"number", direcciones:nuevoTemporal()};
+                let temporal = nuevoTemporal();
+                valor={tipo:"number", direcciones:temporal, valor:temporal};
+                consola.value+=valor.direcciones+"="+puntero+";\n"
+                consola.value+=pila+"[(int)"+valor.direcciones+"]=0;\n"+puntero+"="+puntero+"+1;";
+            }else if(data_type=="boolean"){
+                let temporal = nuevoTemporal();
+                valor={tipo:"boolean", direcciones:temporal, valor:temporal};
+                consola.value+=valor.direcciones+"="+puntero+";\n"
+                consola.value+=pila+"[(int)"+valor.direcciones+"]=0;\n"+puntero+"="+puntero+"+1;";
+            }else{
+                let temporal = nuevoTemporal();
+                valor={tipo:data_type, direcciones:temporal, valor:temporal};
                 consola.value+=valor.direcciones+"=h;\n"
                 consola.value+="heap[(int)"+valor.direcciones+"]=0;\nh=h+1;";
-                heapPush();
-            }else if(data_type=="boolean"){
-                valor={valor:0, tipo:"boolean"};
-                consola.value+="heap[(int)"+valor.direcciones+"]=false;\nh=h+1;";
-                heapPush();
-            }else{
-                valor={valor:0, tipo:data_type};
-                consola.value+="heap[(int)h]=0;\nh=h+1;";
             }
         }
         if(data_type!=valor.tipo){  //se descarta la inferencia de tipos
@@ -897,11 +904,23 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }
         //Crear simbolo
         if(valor.tipo.split("[]").length>1 || tablaDeSimbolos.existe(valor.tipo.split("[]")[0], undefined, "type") || ambito=="Global" || valor.tipo=="string"){
-            //se va  al heap
+            //se va  al heap            
             if(valor.tipo=="string"){
+                if(ambito!="Global"){//para guardar la referencia en el stack
+                    let temporal = nuevoTemporal();
+                    consola.value+=temporal+"=p;\np=p+1;\n";
+                    consola.value+="stack[(int)"+temporal+"]="+valor.valor+";\n";
+                    valor.valor=temporal;
+                }
                 tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, valor.valor);
             }else if(valor.tipo.split("[]").length>1){
-                tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, valor.direcciones);
+                if(ambito!="Global"){
+                   let temporal = nuevoTemporal();
+                    consola.value+=temporal+"=p;\np=p+1;\n";
+                    consola.value+="stack[(int)"+temporal+"]="+valor.valor+";\n";
+                    valor.valor=temporal; 
+                }                
+                tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, valor.valor);
             }else{
                 //consola.value+="heap[(int)h]="+ valor.valor+";\nh=h+1;\n";
                 tablaDeSimbolos.agregar(var_type, id, data_type, ambito, fila, columna, valor.direcciones);
@@ -1034,7 +1053,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+="t0="+valorIzq.valor+";\n";
                 consola.value+="t3="+valorIzq.valor+";\n";
                 consola.value+="t1="+valorDer.valor+";\n";
-                consola.value+="potencia();";
+                consola.value+="potencia();\n";
                 consola.value+=temporal+"=t0;\n";
                 return {valor:temporal,tipo:"number"};
             }else{
@@ -1312,7 +1331,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             let valor = procesarNewArray(expresion.expresion, tablaDeSimbolos, ambito, userType);
             return valor;
         } else {
-            throw 'ERROR: expresión numérica no válida: ' + expresion.valor;
+            printedTable.erEj.push({descripcion:'expresión no válida: ' + expresion.valor[0].valor,ambito:ambito,tipo:"semántico", linea:"temp", columna:"temp"});
+            throw 'ERROR: expresión no válida: ' + expresion.valor;
         }
     }
     function procesarArray(arreglo, tablaDeSimbolos, ambito, userType){
@@ -1453,7 +1473,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let principalValue = tablaDeSimbolos.obtenerSimbolo(instruccion.id, SplitAmbitos(ambito), instruccion.fila, instruccion.columna);
         //determinar si se busca en el stack o en el heap
         let pila = "";
-        if(principalValue.tipo.split("[]").length>1 || tablaDeSimbolos.existe(principalValue.tipo.split("[]")[0], undefined, "type") || ambito=="Global" || principalValue.tipo=="string"||principalValue.ambito=="Global"){
+        if(/*principalValue.tipo.split("[]").length>1 || tablaDeSimbolos.existe(principalValue.tipo.split("[]")[0], undefined, "type")|| principalValue.tipo=="string" ||*/ ambito=="Global" ||principalValue.ambito=="Global"){
             pila="heap";
         }else{
             pila="stack";
@@ -1467,8 +1487,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }else if(pila=="stack"){
             let temporal = nuevoTemporal(), temporal2=nuevoTemporal();
             consola.value+=temporal+"=stack[(int)"+principalValue.valor+"];\n";//dirección en el heap
-            consola.value+=temporal2+"=heap[(int)"+temporal+"];\n";
-            principalValue.valor=temporal2;
+            //consola.value+=temporal2+"=heap[(int)"+temporal+"];\n";
+            principalValue.valor=temporal;
         }
         while(temp!="Epsilon"){
             if(temp.acc_type==TIPO_ACCESO.ATRIBUTO){//B
@@ -1500,16 +1520,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }*/
             }else if(temp.acc_type==TIPO_ACCESO.POSICION){//B
                 //comprobar que sea un array
-                /*
-                se crea un conflicto cuando se pasa a una variable del tipo:
-                let a : number [][] = [[1,2,3],[4,5,6]];
-                let i :number = 0;
-                let b:number[] = a[i];  //nose sabría el valor de la posición a menos que se ingrese con un número
-                let b : number [] = a[0];                   
-                */
                 if(principalValue.tipo.split("[]")==1){
-                // if(principalValue.tipo!=TIPO_DATO.ARRAY){
-                    //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: Intento de acceso a posición de array inexistente\n';  
                     printedTable.erEj.push({descripcion:'Intento de acceso a posición de array inexistente',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
                     throw '>ERROR: Intento de acceso a posición de array inexistente\n';                    
                 }
@@ -1519,7 +1530,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     printedTable.erEj.push({descripcion:'No se reconoce la expresion '+valor.valor+' como un index.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
                     throw '>ERROR:No se reconoce la expresion '+valor.valor+' como un index.\n';                      
                 }
-                //principalValue.direcciones = principalValue.direcciones[valor.valor];
                 //no sabemos el valor de la posición del array 
                 let tipo ="";
                 for(let e =0;e<principalValue.tipo.split("[]").length-1;e++){
@@ -1550,7 +1560,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         principalValue.tipo="number";
                     }else{
                         let temporal = nuevoTemporal();
-                        consola.value+=temporal+"=heap[(int)"+principalValue.valor+"];//en la posición 0 está el size\n";
+                        consola.value+="//en la posición 0 está el size\n";
+                        consola.value+=temporal+"=heap[(int)"+principalValue.valor+"];\n";
                         principalValue.valor=temporal;
                         principalValue.tipo="number";
                     }            
@@ -1624,7 +1635,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
             temp=temp.next_acc;
         }
-      /* aca estaba lo de la línea 1280 */
         return {valor: principalValue.valor, tipo:principalValue.tipo, reference:true};   
     }
     function SplitAmbitos(name){
@@ -2216,16 +2226,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "//t0=cadena\nvoid imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L3;\nL1: if(heap[(int)t0]>300) goto L2;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nprintf(\"%f\", heap[(int)t0]-300);\nt0=t0+1;\ngoto L0;\nL3:\nreturn;\n}\n";
+        let text = "void imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L4;\nL1: if(heap[(int)t0]>=299) goto L2;\nif(heap[(int)t0]<-1) goto L3;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nt1= heap[(int)t0];\nt2=t1-300;\nprintf(\"%f\",t2);\nt0=t0+1;\ngoto L0;\nL3:\nt1= heap[(int)t0];\nprintf(\"%f\",t1);\nt0=t0+1;\ngoto L0;\nL4:\nreturn;\n}";
         //función para concatenar 2 strings
         text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
         text+="//t4 es la cadena \nvoid strLength(){\nL0:\nif(heap[(int)t4]!=-1) goto L1;\ngoto L2;\nL1:\nt4=t4+1;\ngoto L0;\nL2:\n return;\n}\n";
         //funcion para concatenar una string y un numero 
-        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: \nheap[(int)h]=t3+300;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\nif(t3<-1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=t3;\nh=h+1;\ngoto L5;\nL4:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L5;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}";
         //funcion para concatenar un número y string
-        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nheap[(int)h]=t3+300;\nh=h+1;\nL1: if(heap[(int)t1]!=-1) goto L2;\ngoto L3;\nL2:\n t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL3:\nheap[(int)h]=-1;\nh=h+1;\n\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nif(t3<-1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=t3;\nh=h+1;\ngoto L3;\nL2:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L3;\nL3: if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}";
         //funcion toLowerCase
         text+="//t0=inicio de cadena, t1=cambio de letra\nvoid toLowerCase(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L5;\nL1:\nif(heap[(int)t0]>=65) goto L2;\ngoto L3;\nL2:\nif(heap[(int)t0]<=90) goto L4;\nL3: \nt1=heap[(int)t0];\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL4:\nt1=heap[(int)t0];\nt1=t1+32;\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion toUpperCase
@@ -2315,7 +2325,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, funcion.parametros[i].id, funcion.parametros[i].tipo, id, "temp", "temp", temporal);
         }
         if(funcion.parametros.length!=0){
-            consola.value+="p=p+1;";
+            consola.value+="p=p+1;\n";
             consola.value+="//se adelanta el puntero para las variables del entorno\n";
         }
         consola.value+="//termina de declarar los parámetros\n";

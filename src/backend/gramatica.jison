@@ -371,5 +371,6 @@ impresion
 	| CADENA											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA); }
 	| CADENA_CHARS { $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA_CHARS); }
 	| id {$$=instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR);}
+	| R_NULL {$$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.NULL);}
 	| impresion OPERADOR_TERNARIO impresion DOS_PUNTOS impresion {$$=instruccionesAPI.nuevoOperadorTernario($1, $3, $5);}
 ;
