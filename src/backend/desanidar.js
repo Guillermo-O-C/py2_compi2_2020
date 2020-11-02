@@ -231,9 +231,9 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
         }else if (expresion.sentencia === SENTENCIAS.ACCESO_POSICION) {
             return procesarAccesoAPosicion(expresion, tablaDeSimbolos);
         } else if (expresion.tipo === TIPO_VALOR.CADENA) {
-            return "\""+expresion.valor+"\"";
+            return "\""+expresion.valor+"\""+strMethods(expresion.next_acc, tablaDeSimbolos);
         } else if (expresion.tipo === TIPO_VALOR.CADENA_CHARS) {
-            return "\'"+expresion.valor+"\'";
+            return "\'"+expresion.valor+"\'"+strMethods(expresion.next_acc, tablaDeSimbolos);
         } else if (expresion.tipo === TIPO_VALOR.CADENA_EJECUTABLE) {
             return "\`"+expresion.valor+"\`";
         }else if (expresion.tipo === TIPO_VALOR.NULL) {
@@ -377,24 +377,14 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
             }else if(temp.sentencia==SENTENCIAS.LENGTH){
                 text+=".length";
                 break;
-            }else if(temp.sentencia==SENTENCIAS.PUSH){
-                text+=".push("+procesarExpresionNumerica(temp.valor, tablaDeSimbolos)+")";
-                break;
-            }else if(temp.sentencia==SENTENCIAS.POP){
-                text+=".pop()";
-                break;
             }else if(temp.sentencia==SENTENCIAS.CONCAT){
-                text+=".concat("+procesarExpresionNumerica(temp.valor)+")";
-                break;
+                text+=".concat("+procesarExpresionNumerica(temp.valor, tablaDeSimbolos)+")";
             }else if(temp.sentencia==SENTENCIAS.TO_LOWER_CASE){
                 text+=".toLowerCase()";
-                break;
             }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
                 text+=".toUpperCase()";
-                break;
             }else if(temp.sentencia==SENTENCIAS.CHAR_AT){
                 text+=".CharAt("+procesarExpresionNumerica(temp.valor, tablaDeSimbolos)+")";
-                break;
             }
             temp=temp.next_acc;
         }
@@ -557,4 +547,28 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
             consola.value+="> "+error+"\n";
         }
     } 
+    function strMethods(acc, tablaDeSimbolos){
+        let text="";
+        let temp = acc;
+        while(temp!="Epsilon"){
+            if(temp.acc_type==TIPO_ACCESO.ATRIBUTO){
+                text+="."+temp.atributo;
+            }else if(temp.acc_type==TIPO_ACCESO.POSICION){
+                text+="["+procesarExpresionNumerica(temp.index, tablaDeSimbolos)+"]";
+            }else if(temp.sentencia==SENTENCIAS.LENGTH){
+                text+=".length";
+                break;
+            }else if(temp.sentencia==SENTENCIAS.CONCAT){
+                text+=".concat("+procesarExpresionNumerica(temp.valor, tablaDeSimbolos)+")";
+            }else if(temp.sentencia==SENTENCIAS.TO_LOWER_CASE){
+                text+=".toLowerCase()";
+            }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
+                text+=".toUpperCase()";
+            }else if(temp.sentencia==SENTENCIAS.CHAR_AT){
+                text+=".CharAt("+procesarExpresionNumerica(temp.valor, tablaDeSimbolos)+")";
+            }
+            temp=temp.next_acc;
+        }
+        return text;
+    }
 }

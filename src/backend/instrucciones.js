@@ -659,32 +659,36 @@ const instruccionesAPI = {
             fila:fila
         };
     },
-    nuevoCharAt: function(valor, columna, fila){
+    nuevoCharAt: function(valor, next_acc, columna, fila){
         return{
             sentencia:SENTENCIAS.CHAR_AT,
             valor:valor,
+            next_acc:next_acc,
             columna:columna,
             fila:fila
         };
     },
-    nuevoToLowerCase: function(columna, fila){
+    nuevoToLowerCase: function(next_acc,columna, fila){
         return{            
             sentencia:SENTENCIAS.TO_LOWER_CASE,
+            next_acc:next_acc,
             columna:columna,
             fila:fila
         };
     },
-    nuevoToUpperCase: function(columna, fila){
+    nuevoToUpperCase: function(next_acc,columna, fila){
         return{            
             sentencia:SENTENCIAS.TO_UPPER_CASE,
+            next_acc:next_acc,
             columna:columna,
             fila:fila
         };
     },
-    nuevoConcat: function(valor, columna, fila){
+    nuevoConcat: function(valor,next_acc, columna, fila){
         return{
             sentencia:SENTENCIAS.CONCAT,
             valor:valor,
+            next_acc:next_acc,
             columna:columna,
             fila:fila
         };
@@ -693,6 +697,13 @@ const instruccionesAPI = {
         return{
             tipo:TIPO_DATO.NEW_ARRAY,
             expresion:expresion
+        };
+    },
+    nuevoStr:function(valor,next_acc, tipo) {
+        return {
+            tipo: tipo,
+            valor: valor,
+            next_acc:next_acc
         };
     }
 

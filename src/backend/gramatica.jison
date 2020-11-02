@@ -35,8 +35,8 @@
 "null" return 'R_NULL';
 "graficar_ts" return 'R_GRAFICAR_TS';
 "CharAt" return 'R_CHARAT';
-"ToLowerCase" return 'R_TOLOWERCASE';
-"ToUpperCase" return 'R_TOUPPERCASE';
+"toLowerCase" return 'R_TOLOWERCASE';
+"toUpperCase" return 'R_TOUPPERCASE';
 "Concat" return 'R_CONCAT';
 "new" return 'R_NEW';
 "Array" return 'R_ARRAY';
@@ -209,9 +209,9 @@ expresion
 	| IDENTIFICADOR	ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS { $$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line); }
 	| R_TRUE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.TRUE); }
 	| R_FALSE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.FALSE); }
-	| CADENA											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA); }
-	| CADENA_CHARS { $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA_CHARS); }
-	| CADENA_EJECUTABLE { $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA_EJECUTABLE); }
+	| CADENA str_method											{ $$ = instruccionesAPI.nuevoStr($1,$2, TIPO_VALOR.CADENA); }
+	| CADENA_CHARS str_method{ $$ = instruccionesAPI.nuevoStr($1, $2, TIPO_VALOR.CADENA_CHARS); }
+//	| CADENA_EJECUTABLE { $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA_EJECUTABLE); }
 	| objeto { $$ = instruccionesAPI.nuevoObjeto($1, @1.first_column, @1.first_line); }
 	| ABRIR_CORCHETE arrays CERRAR_CORCHETE  { $$ = instruccionesAPI.nuevoArray($2, @2.first_column, @2.first_line); }
 	| id {$$=instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR);}
@@ -338,10 +338,18 @@ id_pr
 //	| PUNTO R_POP ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPop(@2.first_column, @2.first_line);}
 	| PUNTO R_LENGTH {$$=instruccionesAPI.nuevoLength(@2.first_column, @2.first_line);}
 //	| PUNTO R_PUSH ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoPush($4, @2.first_column, @2.first_line);}
-	| PUNTO R_CHARAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoCharAt($4, @2.first_column, @2.first_line);}
-	| PUNTO R_TOLOWERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoToLowerCase(@2.first_column, @2.first_line);}
-	| PUNTO R_TOUPPERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoToUpperCase(@2.first_column, @2.first_line);}
-	| PUNTO R_CONCAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS {$$=instruccionesAPI.nuevoConcat($4, @2.first_column, @2.first_line);}
+	| PUNTO R_CHARAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoCharAt($4, $6, @2.first_column, @2.first_line);}
+	| PUNTO R_TOLOWERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoToLowerCase($5, @2.first_column, @2.first_line);}
+	| PUNTO R_TOUPPERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoToUpperCase($5, @2.first_column, @2.first_line);}
+	| PUNTO R_CONCAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoConcat($4,$6, @2.first_column, @2.first_line);}
+	| {$$="Epsilon";}
+;
+str_method
+	: PUNTO R_CHARAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoCharAt($4, $6, @2.first_column, @2.first_line);}
+	| PUNTO R_TOLOWERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoToLowerCase($5, @2.first_column, @2.first_line);}
+	| PUNTO R_TOUPPERCASE ABRIR_PARENTESIS CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoToUpperCase($5, @2.first_column, @2.first_line);}
+	| PUNTO R_CONCAT ABRIR_PARENTESIS expresion CERRAR_PARENTESIS str_method{$$=instruccionesAPI.nuevoConcat($4,$6, @2.first_column, @2.first_line);}
+	| PUNTO R_LENGTH {$$=instruccionesAPI.nuevoLength(@2.first_column, @2.first_line);}
 	| {$$="Epsilon";}
 ;
 impresion
@@ -368,8 +376,8 @@ impresion
 	| IDENTIFICADOR	ABRIR_PARENTESIS argumentos CERRAR_PARENTESIS { $$ = instruccionesAPI.nuevaLlamada($1, $3, @1.first_column, @1.first_line); }
 	| R_TRUE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.TRUE); }
 	| R_FALSE											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.FALSE); }
-	| CADENA											{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA); }
-	| CADENA_CHARS { $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA_CHARS); }
+	| CADENA str_method											{ $$ = instruccionesAPI.nuevoStr($1,$2, TIPO_VALOR.CADENA); }
+	| CADENA_CHARS str_method{ $$ = instruccionesAPI.nuevoStr($1, $2, TIPO_VALOR.CADENA_CHARS); }
 	| id {$$=instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR);}
 	| R_NULL {$$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.NULL);}
 	| impresion OPERADOR_TERNARIO impresion DOS_PUNTOS impresion {$$=instruccionesAPI.nuevoOperadorTernario($1, $3, $5);}

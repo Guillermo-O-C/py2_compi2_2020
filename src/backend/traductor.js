@@ -748,7 +748,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
             consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
             heapPush();
-            return {valor:[{valor:initial, tipo: "string"}], tipo: "string", direcciones:initial};
+            let principalValue = {valor:initial, tipo: "string", direcciones:initial};
+            strMethods(principalValue, expresion.next_acc, tablaDeSimbolos, ambito);
+            return {valor:[{valor:principalValue.valor, tipo: principalValue.tipo, direcciones:principalValue.valor}], tipo: principalValue.tipo, direcciones:principalValue.valor};
         } else if (expresion.tipo === TIPO_VALOR.CADENA_CHARS) {
             let initial = nuevoTemporal();
             let direcciones = pilas.heap;
@@ -760,7 +762,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }
             consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
             heapPush();
-            return { valor: [{valor:initial, tipo: "string"}], tipo: "string" , direcciones:initial};
+            let principalValue = {valor:initial, tipo: "string", direcciones:initial};
+            strMethods(principalValue, expresion.next_acc, tablaDeSimbolos, ambito);
+            return {valor:[{valor:principalValue.valor, tipo: principalValue.tipo, direcciones:principalValue.valor}], tipo: principalValue.tipo, direcciones:principalValue.valor};
         } else if(expresion.tipo===TIPO_DATO.OPERADOR_TERNARIO){
             let logica =  procesarTexto(expresion.logica, tablaDeSimbolos, ambito);
             if(logica.tipo=="boolean"){
@@ -1293,8 +1297,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 heapPush();
             }
             consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
-            heapPush();
-            return {valor:initial, tipo: "string", direcciones:initial};
+            let principalValue = {valor:initial, tipo: "string", direcciones:initial};
+            strMethods(principalValue, expresion.next_acc, tablaDeSimbolos, ambito);
+            return {valor:principalValue.valor, tipo: principalValue.tipo, direcciones:principalValue.valor};
         } else if (expresion.tipo === TIPO_VALOR.CADENA_CHARS) {
             let initial = nuevoTemporal();
             let direcciones = pilas.heap;
@@ -1305,8 +1310,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 heapPush();
             }
             consola.value+="heap[(int)h]=-1;\nh=h+1;\n";
-            heapPush();
-            return { valor: initial, tipo: "string" , direcciones:initial};
+            let principalValue = {valor:initial, tipo: "string", direcciones:initial};
+            strMethods(principalValue, expresion.next_acc, tablaDeSimbolos, ambito);
+            return {valor:principalValue.valor, tipo: principalValue.tipo, direcciones:principalValue.valor};
         } else if(expresion.tipo===TIPO_DATO.OPERADOR_TERNARIO){
             let logica =  procesarExpresionNumerica(expresion.logica, tablaDeSimbolos, ambito);
             if(logica.tipo=="boolean"){
@@ -1590,7 +1596,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+=temporal3+"=heap[(int)"+temporal1+"];\n";
                 consola.value+=temporal2+"=h;\nheap[(int)"+temporal2+"]="+temporal3+";\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\n"
                 principalValue.valor=temporal2;
-                break;
             }else if(temp.sentencia==SENTENCIAS.TO_LOWER_CASE){
                 if(principalValue.tipo!="string"){
                     //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';  
@@ -1601,7 +1606,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+=temporal+"=h;\nt0="+principalValue.valor+";\n";
                 consola.value+="toLowerCase();\n";
                 principalValue.valor=temporal;
-                break;
             }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
                 if(principalValue.tipo!="string"){
                    // consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';  
@@ -1612,7 +1616,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+=temporal+"=h;\nt0="+principalValue.valor+";\n";
                 consola.value+="toUpperCase();\n";
                 principalValue.valor=temporal;
-                break;
             }else if(temp.sentencia==SENTENCIAS.CONCAT){
                 if(principalValue.tipo!="string"){
                    // consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';  
@@ -1630,8 +1633,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+="t1="+principalValue.valor+";\n";
                 consola.value+="t3="+valor.valor+";\n";
                 consola.value+="concatenar();\n";   
-                principalValue.valor=temporal;             
-                break;
+                principalValue.valor=temporal;
             }
             temp=temp.next_acc;
         }
@@ -2391,5 +2393,93 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return tablas.ts;
             }
         }
+    }
+    function strMethods(principalValue, acc, tablaDeSimbolos, ambito){
+        let temp = acc;
+        while(temp!="Epsilon"){
+            if(temp.sentencia==SENTENCIAS.LENGTH){//R
+                if(principalValue.tipo.split("[]").length>1 || principalValue.tipo =="string"){
+                    if(principalValue.tipo =="string"){
+                        consola.value+="t4="+principalValue.valor+";\n";
+                        let temporal = nuevoTemporal(), posicion = nuevoTemporal();
+                        consola.value+="strLength();\n"
+                        consola.value+=temporal+"= t4-"+principalValue.valor+";\n";
+                        //consola.value+=posicion+"=h;\n"+pila+"[(int)"+posicion+"]="+temporal+";\n";
+                        principalValue.valor= temporal;
+                        principalValue.tipo="number";
+                    }else{
+                        let temporal = nuevoTemporal();
+                        consola.value+="//en la posición 0 está el size\n";
+                        consola.value+=temporal+"=heap[(int)"+principalValue.valor+"];\n";
+                        principalValue.valor=temporal;
+                        principalValue.tipo="number";
+                    }            
+                }else{
+                    // if(principalValue.tipo!=TIPO_DATO.ARRAY){
+                    //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: Intento de Length a un array inexistente.\n';  
+                    printedTable.erEj.push({descripcion:'Intento de Length a un array inexistente.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: Intento de Length a un array inexistente.\n';     
+                }                
+                //principalValue={valor:principalValue.valor.length, tipo:"number"};
+                break;
+            }else if(temp.sentencia==SENTENCIAS.CHAR_AT){
+                if(principalValue.tipo!="string"){
+                    //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede obtener un CharAt en '+principalValue.tipo+'.\n';  
+                    printedTable.erEj.push({descripcion:'No se puede obtener un CharAt en '+principalValue.tipo+'.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: No se puede obtener un CharAt en '+principalValue.tipo+'.\n';                    
+                }
+                let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito);
+                if(valor.tipo!="number"){
+                    //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: '+valor.tipo+' no se puede usar como un índice en CharAt.\n';  
+                    printedTable.erEj.push({descripcion:''+valor.tipo+' no se puede usar como un índice en CharAt',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: '+valor.tipo+' no se puede usar como un índice en CharAt.\n';                    
+                }
+                let temporal1= nuevoTemporal(),temporal2 = nuevoTemporal(), temporal3=nuevoTemporal();
+                consola.value+=temporal1+"="+principalValue.valor+"+"+valor.valor+";\n";
+                consola.value+=temporal3+"=heap[(int)"+temporal1+"];\n";
+                consola.value+=temporal2+"=h;\nheap[(int)"+temporal2+"]="+temporal3+";\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\n"
+                principalValue.valor=temporal2;
+            }else if(temp.sentencia==SENTENCIAS.TO_LOWER_CASE){
+                if(principalValue.tipo!="string"){
+                    //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';  
+                    printedTable.erEj.push({descripcion:'No se puede realizar un toLowerCase en '+principalValue.tipo+'.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';                    
+                }
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\nt0="+principalValue.valor+";\n";
+                consola.value+="toLowerCase();\n";
+                principalValue.valor=temporal;
+            }else if(temp.sentencia==SENTENCIAS.TO_UPPER_CASE){
+                if(principalValue.tipo!="string"){
+                   // consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toLowerCase en '+principalValue.tipo+'.\n';  
+                    printedTable.erEj.push({descripcion:'No se puede realizar un toUpperCase en '+principalValue.tipo+'.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';                    
+                }
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\nt0="+principalValue.valor+";\n";
+                consola.value+="toUpperCase();\n";
+                principalValue.valor=temporal;
+            }else if(temp.sentencia==SENTENCIAS.CONCAT){
+                if(principalValue.tipo!="string"){
+                   // consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';  
+                    printedTable.erEj.push({descripcion:'No se puede realizar un toUpperCase en '+principalValue.tipo+'.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: No se puede realizar un toUpperCase en '+principalValue.tipo+'.\n';                    
+                }
+                let valor = procesarExpresionNumerica(temp.valor, tablaDeSimbolos, ambito);
+                if(valor.tipo!="string"){
+                   // consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede concatenar '+valor.tipo+'.\n';  
+                    printedTable.erEj.push({descripcion:'No se puede concatenar '+valor.tipo+'.',tipo:"semántico", linea:temp.fila, columna:temp.columna,ambito:ambito});
+                    throw '>ERROR: No se puede concatenar '+valor.tipo+'.\n';                    
+                }
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+principalValue.valor+";\n";
+                consola.value+="t3="+valor.valor+";\n";
+                consola.value+="concatenar();\n";   
+                principalValue.valor=temporal;
+            }
+            temp=temp.next_acc;
+        }
+        return {valor: principalValue.valor, tipo:principalValue.tipo, reference:true};   
     }
 }
