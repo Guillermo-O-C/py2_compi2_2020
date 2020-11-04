@@ -590,7 +590,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor[0].valor+"=="+valorDer.valor[0].valor+";\n";
+                consola.value+="t0="+valorIzq.valor[0].valor+";\nt1="+valorDer.valor[0].valor+";\n";
+                consola.value+="compareStrs();\n";
+                consola.value+=temporal+"=t2;\n"
                 return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};
             }else if(tablaDeSimbolos.existe(valorIzq.tipo, undefined, "type") && tablaDeSimbolos.existe(valorDer.tipo, undefined, "type")){
                 let temporal = nuevoTemporal();
@@ -1133,7 +1135,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:temporal,tipo:"boolean"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
+                consola.value+="t0="+valorIzq.valor+";\nt1="+valorDer.valor+";\n";
+                consola.value+="compareStrs();\n";
+                consola.value+=temporal+"=t2;\n"
                 return {valor:temporal,tipo:"boolean"};
             }else if(tablaDeSimbolos.existe(valorIzq.tipo, undefined, "type") && tablaDeSimbolos.existe(valorDer.tipo, undefined, "type")){
                 let temporal = nuevoTemporal();
@@ -2250,6 +2254,8 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         text+="//t3=boolean\nvoid boolToStr(){\nL0:\nif(t3==1) goto L1;\ngoto L2;\nL1:\nprintf(\"%c\", (char)116);\nprintf(\"%c\", (char)114);\nprintf(\"%c\", (char)117);\nprintf(\"%c\", (char)101);\ngoto L3;\nL2:\nprintf(\"%c\", (char)102);\nprintf(\"%c\", (char)97);\nprintf(\"%c\", (char)108);\nprintf(\"%c\", (char)115);\nprintf(\"%c\", (char)101);\nL3:\nreturn;\n}\n";
         //potencia
         text+="//t0=resultado, t1=exponente, t2=iterador, t3=base\nvoid potencia(){\nt2=1;\nL0:if(t2<t1) goto L1;\ngoto L2;\nL1:\nt0=t3*t0;\nt2=t2+1;\ngoto L0;\nL2:\nreturn;\n}\n";
+        //comparar strings
+        text+="//t0=cadena1, t1=cadena2, t2=resultado\nvoid compareStrs(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L2;\nL1:\nif(heap[(int)t1]!=-1) goto L3;\ngoto L4;\nL2:\nif(heap[(int)t1]==-1) goto L5;\ngoto L4;\nL3:\nif(heap[(int)t0]!=heap[(int)t1]) goto L4;\nt0=t0+1;\nt1=t1+1;\ngoto L0;\nL4:\nt2=0;\ngoto L6;\nL5:\nt2=1;\nL6:\nreturn;\n}";
         return text;
     }
     function declararArregloC3D(arreglo){
@@ -2381,7 +2387,6 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             }            
         } 
     }
-
     function Nested(id){
         let padre = "";
         for(let i =0;i<id.split("_").length-1;i++){
