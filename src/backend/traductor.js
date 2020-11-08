@@ -784,11 +784,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }else{
                     let temporal = nuevoTemporal();
                     consola.value+=temporal+"=1;\n";
-                    consola.value+="if("+valorIzq.valor[0].valor+") goto "+tempVerdadero+";\n";
+                    consola.value+="if("+valorIzq.valor[0].valor+") goto "+verdadero+";\n";
                     consola.value+=temporal+"=0;\n";
                     consola.value+="goto "+segundaCondicion+";\n"
                     consola.value+=segundaCondicion+":\n";
-                    consola.value+="if("+valorDer.valor[0].valor+") goto "+tempVerdadero+";\n";
+                    consola.value+=temporal+"=1;\n";
+                    consola.value+="if("+valorDer.valor[0].valor+") goto "+verdadero+";\n";
                     consola.value+=temporal+"=0;\n";
                     return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};
                 }
@@ -799,36 +800,38 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_OPERACION.NOT) {
             let negacion = nuevaEtiqueta();
             const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito, undefined, negacion, negacion);
-            if(valorIzq.tipo=="boolean"){
-                if(verdadero==undefined && falso == undefined){
-                    let pos_temp=valorIzq.valor[0].valor, falso= nuevaEtiqueta();
-                    if(expresion.tipo!=TIPO_OPERACION.AND||expresion.tipo!=TIPO_OPERACION.OR||expresion.tipo!=TIPO_OPERACION.NOT){
-                        let temporal=nuevoTemporal();
-                        pos_temp=temporal;
-                        consola.value+=pos_temp+"=1;\n";
-                        consola.value+="if("+valorIzq.valor[0].valor+") goto "+negacion+";\n";
-                        consola.value+=pos_temp+"=0;\n";
-                    }
-                    consola.value+=negacion+":\n";
-                    consola.value+="if("+pos_temp+") goto "+falso+";\n";
+            if(valorIzq.tipo=="boolean"){ if(verdadero==undefined && falso == undefined){
+                let pos_temp=nuevoTemporal(), falso= nuevaEtiqueta(), final = nuevaEtiqueta();
+               /* if(expresion.tipo!=TIPO_OPERACION.AND||expresion.tipo!=TIPO_OPERACION.OR||expresion.tipo!=TIPO_OPERACION.NOT){
+                    let temporal=nuevoTemporal();
+                    pos_temp=temporal;
+                    consola.value+="if("+valorIzq.valor+") goto "+negacion+";\n";
+                    consola.value+=pos_temp+"=1;\n";
+                }*/
+                consola.value+=negacion+":\n";
+                consola.value+="if("+valorIzq.valor[0].valor+") goto "+falso+";\n";
+                consola.value+=pos_temp+"=1;\n";
+                consola.value+="goto "+final+";\n";
+                consola.value+=falso+":\n";
+                consola.value+=pos_temp+"=0;\n";
+                consola.value+=final+":\n";
+                return {valor:[{valor:pos_temp,tipo:"boolean"}],tipo:"boolean"};
+            }else{
+                let pos_temp=nuevoTemporal();
+              /*  if(expresion.tipo!=TIPO_OPERACION.AND||expresion.tipo!=TIPO_OPERACION.OR||expresion.tipo!=TIPO_OPERACION.NOT){
+                    let temporal=nuevoTemporal();
+                    pos_temp=temporal;
+                    consola.value+=pos_temp+"=1;\n";
+                    consola.value+="if("+valorIzq.valor+") goto "+negacion+";\n";
                     consola.value+=pos_temp+"=0;\n";
-                    consola.value+=falso+":\n";
-                    return {valor:pos_temp,tipo:"boolean"};
-                }else{
-                    let pos_temp=valorIzq.valor[0].valor;
-                    if(expresion.tipo!=TIPO_OPERACION.AND||expresion.tipo!=TIPO_OPERACION.OR||expresion.tipo!=TIPO_OPERACION.NOT){
-                        let temporal=nuevoTemporal();
-                        pos_temp=temporal;
-                        consola.value+=pos_temp+"=1;\n";
-                        consola.value+="if("+valorIzq.valor[0].valor+") goto "+negacion+";\n";
-                        consola.value+=pos_temp+"=0;\n";
-                    }
-                    consola.value+=negacion+":\n";
-                    consola.value+="if("+pos_temp+") goto "+falso+";\n";
-                    consola.value+=pos_temp+"=0;\n";
-                    consola.value+="goto "+verdadero+";\n";
-                    return {valor:[{valor:pos_temp,tipo:"boolean"}],tipo:"boolean"};            
-                }
+                }*/
+                consola.value+=negacion+":\n";
+                consola.value+=pos_temp+"=0;\n";
+                consola.value+="if("+valorIzq.valor[0].valor+") goto "+falso+";\n";
+                consola.value+=pos_temp+"=1;\n";
+                //consola.value+="goto "+verdadero+";\n";
+                return {valor:[{valor:pos_temp,tipo:"boolean"}],tipo:"boolean"};            
+            }
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
                 throw '>ERROR: No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo; 
@@ -1376,34 +1379,62 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 throw '>ERROR: No se puede realizar la operación de igualdad con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
             }
         } else if (expresion.tipo === TIPO_OPERACION.AND) {
-            const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito, undefined, verdadero, falso);
-            const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito, undefined, verdadero, falso);
+            let segundaCondicion = nuevaEtiqueta();
+            let tempVerdadero, tempFalso;
+            if(verdadero==undefined && falso == undefined){
+                tempVerdadero= nuevaEtiqueta();
+                tempFalso = nuevaEtiqueta();
+            }else{
+                tempVerdadero= verdadero;
+                tempFalso=falso;
+            }
+            const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito, undefined, segundaCondicion, tempFalso);
+            let tempStr = consola.value;
+            consola.value="";
+            const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito, undefined, tempVerdadero, tempFalso);
+            let RigthDec = consola.value;
+            consola.value=tempStr;
             if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
                 if(verdadero==undefined && falso == undefined){
-                    let temporal = nuevoTemporal();//true o false return
-                    let segundaCondicion = nuevaEtiqueta(), falso = nuevaEtiqueta();
-                    consola.value+=temporal+"=1;\n";
-                    consola.value+="if("+valorIzq.valor+") goto "+segundaCondicion+";\n";
-                    consola.value+=temporal+"=0;\n";
-                    consola.value+="goto "+falso+";\n";
+                    let temporal = nuevoTemporal(), final = nuevaEtiqueta();//true o false return
+                     //consola.value+=temporal+"=1;\n";
+                    if(expresion.operandoIzq.tipo!=TIPO_OPERACION.OR&&expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT){
+                        consola.value+="if("+valorIzq.valor+") goto "+segundaCondicion+";\n";
+                        //consola.value+=temporal+"=0;\n";
+                        consola.value+="goto "+tempFalso+";\n";
+                    }
                     consola.value+=segundaCondicion+":\n";
-                    consola.value+="if("+valorDer.valor+") goto "+falso+";\n";
+                    consola.value+=RigthDec;
+                    if(expresion.operandoDer.tipo!=TIPO_OPERACION.OR&&expresion.operandoDer.tipo!=TIPO_OPERACION.AND&&expresion.operandoDer.tipo!=TIPO_OPERACION.NOT){
+                      
+                        consola.value+="if("+valorDer.valor+") goto "+tempVerdadero+";\n";
+                        consola.value+="goto "+tempFalso+";\n";
+                    }
+                    consola.value+=tempVerdadero+":\n"
+                    consola.value+=temporal+"=1;\n";
+                    consola.value+="goto "+final+";\n";
+                    consola.value+=tempFalso+":\n"
                     consola.value+=temporal+"=0;\n";
-                    consola.value+="goto "+falso+";\n";
-                    consola.value+=falso+":\n"
+                    consola.value+=final+":\n"
+
                     return {valor:temporal,tipo:"boolean"};
                 }else{
-                    let temporal = nuevoTemporal();//true o false return
-                    let segundaCondicion = nuevaEtiqueta();
-                    consola.value+=temporal+"=1;\n";
+                    //let temporal = nuevoTemporal();//true o false return
+                    //consola.value+=temporal+"=1;\n";
+                    if(expresion.operandoIzq.tipo!=TIPO_OPERACION.OR&&expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT){
                     consola.value+="if("+valorIzq.valor+") goto "+segundaCondicion+";\n";
-                    consola.value+=temporal+"=0;\n";
+                    //consola.value+=temporal+"=0;\n";
                     consola.value+="goto "+falso+";\n";
+                    }
                     consola.value+=segundaCondicion+":\n";
-                    consola.value+="if("+valorDer.valor+") goto "+verdadero+";\n";
-                    consola.value+=temporal+"=0;\n";
+                    consola.value+=RigthDec;
+                    if(expresion.operandoDer.tipo!=TIPO_OPERACION.OR&&expresion.operandoDer.tipo!=TIPO_OPERACION.AND&&expresion.operandoDer.tipo!=TIPO_OPERACION.NOT){
+                        consola.value+="if("+valorDer.valor+") goto "+verdadero+";\n";
+                    
+                    //consola.value+=temporal+"=0;\n";
                     consola.value+="goto "+falso+";\n";
-                    return {valor:temporal,tipo:"boolean"};
+                    }
+                    return {verdadero:verdadero, falso:falso,tipo:"boolean"};
                 }
                 
             }else{
@@ -1421,18 +1452,28 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     tempFalso=falso;
                 }
                 const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito, undefined, tempVerdadero, segundaCondicion);
+                let tempStr = consola.value;
+                consola.value="";
                 const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito, undefined, tempVerdadero, tempFalso);
+                let RigthDec = consola.value;
+                consola.value=tempStr;
             if(valorIzq.tipo=="boolean" && valorDer.tipo=="boolean"){
                 if(verdadero==undefined && falso == undefined){
                     let temporal = nuevoTemporal(), final = nuevaEtiqueta();
-                    //consola.value+=temporal+"=1;\n";   
+                    //consola.value+=temporal+"=1;\n";  
+                    if(expresion.operandoIzq.tipo!=TIPO_OPERACION.OR&&expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT){
                     consola.value+="if("+valorIzq.valor+") goto "+tempVerdadero+";\n";
                     //consola.value+=temporal+"=0;\n";
                     consola.value+="goto "+segundaCondicion+";\n"
+                } 
+                    
                     consola.value+=segundaCondicion+":\n";
-                    consola.value+="if("+valorDer.valor+") goto "+tempVerdadero+";\n";
-                    //c/onsola.value+=temporal+"=0;\n";
-                    consola.value+="goto "+tempFalso+";\n";
+                    consola.value+=RigthDec;
+                    if(expresion.operandoDer.tipo!=TIPO_OPERACION.OR&&expresion.operandoDer.tipo!=TIPO_OPERACION.AND&&expresion.operandoDer.tipo!=TIPO_OPERACION.NOT){
+                        consola.value+="if("+valorDer.valor+") goto "+tempVerdadero+";\n";
+                        //c/onsola.value+=temporal+"=0;\n";
+                        consola.value+="goto "+tempFalso+";\n";
+                    }
                     consola.value+=tempVerdadero+":\n";
                     consola.value+=temporal+"=1;\n";
                     consola.value+="goto "+final+";\n";
@@ -1441,24 +1482,42 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=final+":\n";
                     return {valor:temporal,tipo:"boolean"};
                 }else{
-                    let temporal = nuevoTemporal();
-                    consola.value+=temporal+"=1;\n";
-                    consola.value+="if("+valorIzq.valor+") goto "+verdadero+";\n";
-                    consola.value+=temporal+"=0;\n";
-                    consola.value+="goto "+segundaCondicion+";\n"
+                    //let temporal = nuevoTemporal();
+                    //consola.value+=temporal+"=1;\n"; 
+                    if(expresion.operandoIzq.tipo!=TIPO_OPERACION.OR&&expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT){
+                   
+                    consola.value+="if("+valorIzq.valor+") goto "+tempVerdadero+";\n";
+                    //consola.value+=temporal+"=0;\n";
+                    consola.value+="goto "+segundaCondicion+";\n";
+                    }
                     consola.value+=segundaCondicion+":\n";
-                    consola.value+="if("+valorDer.valor+") goto "+verdadero+";\n";
-                    consola.value+=temporal+"=0;\n";
+                    consola.value+=RigthDec;
+
+                    if(expresion.operandoDer.tipo!=TIPO_OPERACION.OR&&expresion.operandoDer.tipo!=TIPO_OPERACION.AND&&expresion.operandoDer.tipo!=TIPO_OPERACION.NOT){
+                        consola.value+="if("+valorDer.valor+") goto "+tempVerdadero+";\n";
+                        consola.value+="goto "+falso+";\n";
+                    }
+                    //consola.value+=falso+":\n";
+
+                    
+                    //consola.value+=temporal+"=0;\n";
                     //consola.value+="goto "+falso+";\n";
-                    return {valor:temporal,tipo:"boolean"};
-                }
+                    return {verdadero:verdadero, falso:falso,tipo:"boolean"};
+                }                
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
                 throw '>ERROR: No se puede realizar la operación de OR con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
             }
         } else if (expresion.tipo === TIPO_OPERACION.NOT) {
-            let negacion = nuevaEtiqueta();
-            const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito, undefined, negacion, negacion);
+            let tempVerdadero, tempFalso;
+            if(verdadero==undefined && falso == undefined){
+                tempVerdadero= nuevaEtiqueta();
+                tempFalso = nuevaEtiqueta();
+            }else{
+                tempVerdadero= verdadero;
+                tempFalso=falso;
+            }
+            const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito, undefined, tempFalso, tempVerdadero);
             if(valorIzq.tipo=="boolean"){
                 if(verdadero==undefined && falso == undefined){
                     let pos_temp=nuevoTemporal(), falso= nuevaEtiqueta(), final = nuevaEtiqueta();
@@ -1468,16 +1527,15 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         consola.value+="if("+valorIzq.valor+") goto "+negacion+";\n";
                         consola.value+=pos_temp+"=1;\n";
                     }*/
-                    consola.value+=negacion+":\n";
-                    consola.value+="if("+valorIzq.valor+") goto "+falso+";\n";
+                    consola.value+=tempVerdadero+":\n";
                     consola.value+=pos_temp+"=1;\n";
                     consola.value+="goto "+final+";\n";
-                    consola.value+=falso+":\n";
+                    consola.value+=tempFalso+":\n";
                     consola.value+=pos_temp+"=0;\n";
                     consola.value+=final+":\n";
                     return {valor:pos_temp,tipo:"boolean"};
                 }else{
-                    let pos_temp=nuevoTemporal();
+                    //let pos_temp=nuevoTemporal();
                   /*  if(expresion.tipo!=TIPO_OPERACION.AND||expresion.tipo!=TIPO_OPERACION.OR||expresion.tipo!=TIPO_OPERACION.NOT){
                         let temporal=nuevoTemporal();
                         pos_temp=temporal;
@@ -1485,12 +1543,13 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         consola.value+="if("+valorIzq.valor+") goto "+negacion+";\n";
                         consola.value+=pos_temp+"=0;\n";
                     }*/
-                    consola.value+=negacion+":\n";
-                    consola.value+=pos_temp+"=0;\n";
-                    consola.value+="if("+valorIzq.valor+") goto "+falso+";\n";
-                    consola.value+=pos_temp+"=1;\n";
+                    //consola.value+=negacion+":\n";
+                    //consola.value+=pos_temp+"=0;\n";
+                    //consola.value+="if("+valorIzq.valor+") goto "+falso+";\n";
+                    //consola.value+=pos_temp+"=1;\n";
                     //consola.value+="goto "+verdadero+";\n";
-                    return {valor:pos_temp,tipo:"boolean"};            
+                    
+                    return {verdadero:verdadero, falso:falso,tipo:"boolean"};            
                 }
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de NOT con el tipos:'+valorIzq.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
@@ -2103,7 +2162,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         consola.value+="//comienza el if\n";
         let verdadero = nuevaEtiqueta(), falso = nuevaEtiqueta(), final=nuevaEtiqueta();
         const logica = procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito, undefined, verdadero, falso);
-        if(instruccion.logica.tipo!=TIPO_OPERACION.AND || instruccion.logica.tipo!=TIPO_OPERACION.OR||instruccion.logica.tipo!=TIPO_OPERACION.NOT){
+        if(instruccion.logica.tipo!=TIPO_OPERACION.AND && instruccion.logica.tipo!=TIPO_OPERACION.OR&&instruccion.logica.tipo!=TIPO_OPERACION.NOT){
             consola.value+="if("+logica.valor+") goto "+verdadero+";\ngoto "+falso+";\n";
         }        
         consola.value+=verdadero+":\n";
@@ -2300,7 +2359,13 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         for(let i =0; i < etiquetas.length;i++){
             if(temp.logica!="default"){
             let logica = procesarExpresionNumerica(temp.logica, tablaDeSimbolos, ambito); 
-            consola.value+=comparacion+"="+original.valor+"=="+logica.valor+";\n";
+                if(original.tipo=="string" && logica.tipo=="string"){
+                    consola.value+="t0="+original.valor+";\nt1="+logica.valor+";\n";
+                    consola.value+="compareStrs();\n";
+                    consola.value+=comparacion+"=t2;\n"
+                }else{
+                consola.value+=comparacion+"="+original.valor+"=="+logica.valor+";\n"; 
+                }            
                 consola.value+="if("+comparacion+") goto "+etiquetas[i]+";\n";
             }else{
                 consola.value+="goto "+etiquetas[i]+";\n";
