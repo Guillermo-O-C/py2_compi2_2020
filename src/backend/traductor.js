@@ -295,6 +295,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             throw '>ERROR:  No se puede asignar a ' + instruccion.id.id+' porque es una constante.\n';   
         }
         let assignedValue = procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos, ambito, principalValue.tipo);
+        if(instruccion.expresion.tipo!=TIPO_OPERACION.AND && instruccion.expresion.tipo!=TIPO_OPERACION.OR && instruccion.expresion.tipo!=TIPO_OPERACION.NOT && assignedValue.tipo=="boolean"){
+            let temp = nuevoTemporal();
+            consola.value+=temp+"="+principalValue.valor+";\n";
+            principalValue.valor=temp;
+        }
         let temp = instruccion.id.acc, tipo =principalValue.tipo, direcciones=principalValue.direcciones, pila, bandera=false;
         if(ambito=="Global"||principalValue.ambito=="Global"/*&&principalValue.tipo=="number"||principalValue.ambito=="Global"&&principalValue.tipo=="boolean"*/){
             pila="heap";
@@ -971,6 +976,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         return cadena.valor;
     }
     function crearSimbolo(var_type, id, data_type, valor, ambito, tablaDeSimbolos, fila, columna){
+        let addTemp = (valor.tipo!=TIPO_OPERACION.AND &&valor.tipo!=TIPO_OPERACION.OR &&valor.tipo!=TIPO_OPERACION.NOT)?true:false;
         consola.value+="//comienza declaracion de variable "+id+"\n";
         //Verificar que exista el tipo de dato de la variable
         data_type=procesarDataType(data_type);  //establece el tipo de la variable que es obligatorio declarar
@@ -1010,6 +1016,11 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=puntero+"="+puntero+"+1;\n";
                     //consola.value+=temp+"="+valor.valor+";\n";
                     //consola.value+=valor.direcciones+"=h;\n";
+                    if(valor.tipo=="boolean" && addTemp){
+                        let temp = nuevoTemporal();
+                        consola.value+=temp+"="+valor.valor+";\n";
+                        valor.valor=temp;
+                    }
                     consola.value+=pila+"[(int)"+valor.direcciones+"]="+valor.valor+";\n";
               /*  }else{
                     valor.direcciones=nuevoTemporal();
@@ -1995,7 +2006,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 //declarar parámetros con los valores de los argumentos
             }
         }else{
-            consola.value+='>ERROR:f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\n No se puede ejecutar '+instruccion.id+' desde el ámbito '+ambito+'.\n';  
+            printedTable.erEj.push({descripcion:'No se puede ejecutar '+instruccion.id+' desde el ámbito '+ambito,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
             throw '>ERROR: No se puede ejecutar '+instruccion.id+' desde el ámbito '+ambito+'.\n'; 
         }        
     }
@@ -2117,14 +2128,14 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         consola.value+="t1=heap[(int)"+principalValue.valor+"];\n";
                         consola.value+="t3="+valor.valor+";\n";
                         consola.value+="conStrNum();\n";
-                        consola.value+=principalValue.valor+"="+temporal+";\n";
+                        consola.value+="heap[(int)"+principalValue.valor+"]="+temporal+";\n";
                     }else{//boolean
                         let temporal = nuevoTemporal();
                         consola.value+=temporal+"=h;\n";
                         consola.value+="t1=heap[(int)"+principalValue.valor+"];\n";
                         consola.value+="t3="+valor.valor+";\n";
                         consola.value+="conStrBool();\n";
-                        consola.value+=principalValue.valor+"="+temporal+";\n";
+                        consola.value+="heap[(int)"+principalValue.valor+"]="+temporal+";\n";
                     }
                 }else{
                     //consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: No se puede hacer una adicción del tipo ' + valor.tipo+'\n';  
@@ -2334,6 +2345,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function procesarSwitch(instruccion, tablaDeSimbolos, ambito, retorno){
         let original = procesarExpresionNumerica(instruccion.logica, tablaDeSimbolos, ambito);
+        if(original.tipo!="number"||original.tipo!="boolean"){
+            printedTable.erEj.push({descripcion:'No se puede realizar un switch con el tipo '+original.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
+            throw '>ERROR:No se puede realizar un switch con el tipo '+original.tipo+'.\n'; 
+        } 
         let inicio = nuevaEtiqueta(), casos=nuevaEtiqueta(), final = nuevaEtiqueta(), temp = instruccion.cases, comparacion=nuevoTemporal(), etiquetas = [];
         consola.value+="goto "+inicio+";\n";
         while(temp!="Epsilon"){       
@@ -2353,13 +2368,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         for(let i =0; i < etiquetas.length;i++){
             if(temp.logica!="default"){
             let logica = procesarExpresionNumerica(temp.logica, tablaDeSimbolos, ambito); 
-                if(original.tipo=="string" && logica.tipo=="string"){
+                /*if(original.tipo=="string" && logica.tipo=="string"){
                     consola.value+="t0="+original.valor+";\nt1="+logica.valor+";\n";
                     consola.value+="compareStrs();\n";
                     consola.value+=comparacion+"=t2;\n"
+                }else*/
+                if(logica.tipo=="number"||logica.tipo=="boolean"){
+                    consola.value+=comparacion+"="+original.valor+"=="+logica.valor+";\n"; 
                 }else{
-                consola.value+=comparacion+"="+original.valor+"=="+logica.valor+";\n"; 
-                }            
+                    printedTable.erEj.push({descripcion:'No se puede realizar un switch con los tipos '+original.tipo+", "+logica.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
+                    throw '>ERROR:No se puede realizar un switch con los tipos '+original.tipo+", "+logica.tipo+'.\n'; 
+                }             
                 consola.value+="if("+comparacion+") goto "+etiquetas[i]+";\n";
             }else{
                 consola.value+="goto "+etiquetas[i]+";\n";
