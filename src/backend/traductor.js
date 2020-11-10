@@ -321,7 +321,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 //comprobar que el valor sea del mismo tipo del atributo o null
                 if(value == false){
                     //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No existe el atributo '+temp.atributo+'\n';  
-                    printedTable.erEj.push({descripcion:' No existe el atributo '+temp.atributo,tipo:"semántico", linea:temp.fila, columna:temp.columna}); 
+                    printedTable.erEj.push({descripcion:' No existe el atributo '+temp.atributo,tipo:"semántico", linea:temp.fila, columna:temp.columna, ambito:ambito}); 
                     throw '>ERROR: No existe el atributo '+temp.atributo+'\n';
                 }
                 /*for(let attribute of principalValue.direcciones){
@@ -345,7 +345,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 let valor = procesarExpresionNumerica(temp.index, tablaDeSimbolos, ambito);
                 if(valor.tipo!="number"){
                     //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se reconoce la expresion '+valor.valor+' como un index.\n';
-                    printedTable.erEj.push({descripcion:'No se reconoce la expresion '+valor.valor+' como un index',tipo:"semántico", linea:temp.fila, columna:temp.columna});
+                    printedTable.erEj.push({descripcion:'No se reconoce la expresion '+valor.valor+' como un index',tipo:"semántico", linea:temp.fila, columna:temp.columna, ambito:ambito});
                     throw '>ERROR:No se reconoce la expresion '+valor.valor+' como un index.\n';                      
                 }
                 let tempTipo="";
@@ -365,7 +365,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 }
             }else {
                 //consola.value+='>f:'+temp.fila+', c:'+temp.columna+', ambito:'+ambito+'\nERROR: No se puede asignar esta accion en esta asignación: '+temp+'\n'; 
-                printedTable.erEj.push({descripcion:'No se puede asignar esta accion en esta asignación: '+temp,tipo:"semántico", linea:temp.fila, columna:temp.columna}); 
+                printedTable.erEj.push({descripcion:'No se puede asignar esta accion en esta asignación: '+temp,tipo:"semántico", linea:temp.fila, columna:temp.columna, ambito:ambito}); 
                 throw '>ERROR: No se puede asignar esta accion en esta asignación: '+temp+'\n';
             }
             temp=temp.next_acc;
@@ -408,7 +408,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         }else{
                // principalValue.valor=assignedValue.valor;}else
                 //consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';  
-                printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna}); 
+                printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna, ambito:ambito}); 
                 throw '>ERROR: Incompatibilidad de tipos: ' + assignedValue.tipo + ' no se puede convertir en ' + principalValue.tipo+'\n';                
         }
     }
@@ -936,7 +936,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:[{valor:temporal, tipo:valorVerdadero.tipo}], tipo:valorVerdadero.tipo};
             }
         } else {
-            printedTable.erEj.push({descripcion:'expresión no válida: ' + expresion.valor[0].valor,ambito:ambito,tipo:"semántico", linea:"temp", columna:"temp"});
+            printedTable.erEj.push({descripcion:'expresión no válida: ' + expresion.valor[0].valor,ambito:ambito,tipo:"semántico", linea:"temp", columna:"temp", ambito:ambito});
             throw 'ERROR: expresión no válida: ' + expresion.valor[0].valor;
         }
     }
@@ -1812,7 +1812,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
              //   if(value.valor.tipo=="number"||value.valor.tipo=="boolean"){
                     let temporal1=nuevoTemporal(),temporal2=nuevoTemporal(); 
                     consola.value+=temporal1+"="+principalValue.valor+"+"+(value.posicion)+";\n";
-                    consola.value+=temporal2+"= heap[(int)"+temporal1+"];\n";
+                    consola.value+=temporal2+"=heap[(int)"+temporal1+"];\n";
                     principalValue.valor=temporal2;
                     principalValue.tipo=value.valor.tipo;
                     //no sé por qué había separado los tipos tengo que ver 
@@ -1845,7 +1845,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     let temporal1=nuevoTemporal(),temporal2=nuevoTemporal(),temporal3=nuevoTemporal();
                     consola.value+=temporal1+"="+valor.valor+"+1;\n";
                     consola.value+=temporal2+"="+principalValue.valor+"+"+temporal1+";\n";
-                    consola.value+=temporal3+"= heap[(int)"+temporal2+"];\n";
+                    consola.value+=temporal3+"=heap[(int)"+temporal2+"];\n";
                     principalValue.valor=temporal3;
              /*   }else{
                     let suma = nuevoTemporal();
@@ -2139,7 +2139,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     }
                 }else{
                     //consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: No se puede hacer una adicción del tipo ' + valor.tipo+'\n';  
-                    printedTable.erEj.push({descripcion:'No se puede hacer una adicción del tipo ' + valor.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna}); 
+                    printedTable.erEj.push({descripcion:'No se puede hacer una adicción del tipo ' + valor.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna, ambito:ambito}); 
                     throw '>ERROR: No se puede hacer una adicción del tipo ' + valor.tipo+'\n';                    
                 }
             }else if(instruccion.sentencia==SENTENCIAS.ASIGNACION_RESTA){
@@ -2151,13 +2151,13 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=pila+"[(int)"+principalValue.valor+"]="+temporal2+";\n";
                 }else{
                 //  consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: No se puede hacer una adicción del tipo ' + valor.tipo+'\n';  
-                    printedTable.erEj.push({descripcion:'No se puede hacer una adicción del tipo ' + valor.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna}); 
+                    printedTable.erEj.push({descripcion:'No se puede hacer una adicción del tipo ' + valor.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna, ambito:ambito}); 
                     throw '>ERROR: No se puede hacer una adicción del tipo ' + valor.tipo+'\n';                    
                 }        
             }
         }else{
             //consola.value+='>f:'+instruccion.fila+', c:'+instruccion.columna+', ambito:'+ambito+'\nERROR: No se puede usar el operador += con el tipo de dato: ' + principalValue.tipo+'\n';  
-            printedTable.erEj.push({descripcion:'No se puede usar el operador += con el tipo de dato: ' + principalValue.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna}); 
+            printedTable.erEj.push({descripcion:'No se puede usar el operador += con el tipo de dato: ' + principalValue.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna, ambito:ambito}); 
             throw '>ERROR: Incompatibilidad de tipos: No se puede usar el operador += con el tipo de dato: ' + principalValue.tipo+'\n'; 
         }
         

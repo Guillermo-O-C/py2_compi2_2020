@@ -26,8 +26,11 @@ import Slide from '@material-ui/core/Slide';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import Desanidar from './desanidar';
 import AccountTreeIcon from '@material-ui/icons/AccountTree';
+import CreateIcon from '@material-ui/icons/Create';
 import Traducir from './traductor';
 import Tree from 'react-d3-tree';
+import Optimizar from './optimizado';
+import NearMeIcon from '@material-ui/icons/NearMe';
 const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,
@@ -78,7 +81,7 @@ const useStyles = makeStyles((theme) => ({
     marginTop:'0%',
   }
 }));
-const reports = {tsTr:[], erTr:[], tsEj:[], erEj:[]};
+const reports = {tsTr:[], erTr:[], tsEj:[], erEj:[], opt:[]};
 const intros = {AST:[], entrada:"", salida:"", desanidado:""};
 const tablero = document.createElement("div");
 var data;
@@ -106,6 +109,10 @@ export default function UI() {
     Desanidar(analizar(intros.entrada), document.getElementById('consola'), intros.salida, reports);
     tablero.innerHTML=document.createElement("div").innerHTML;
     Traducir(analizar(intros.desanidado), document.getElementById('consola'), intros.salida, reports,  tablero);
+  }
+  function upgrade(){
+    reports.opt=[];
+    Optimizar(document.getElementById('consola'), reports,  tablero);
   }
   function prs(AST){
     let temp = {attributes:{} , children:[]};
@@ -213,11 +220,13 @@ export default function UI() {
         var celda3 = row.insertCell(2);
         var celda4 = row.insertCell(3);
         var celda5 = row.insertCell(4);
+        var celda6 = row.insertCell(5);
         celda1.innerHTML = i;
         celda2.innerHTML = err.tipo;
         celda3.innerHTML = err.linea;
         celda4.innerHTML = err.columna;
         celda5.innerHTML = err.descripcion;
+        celda5.innerHTML = err.ambito;
         i++;
       }
     }else{
@@ -390,17 +399,55 @@ export default function UI() {
         var celda3 = row.insertCell(2);
         var celda4 = row.insertCell(3);
         var celda5 = row.insertCell(4);
+        var celda6 = row.insertCell(5);
         celda1.innerHTML = i;
         celda2.innerHTML = err.tipo;
         celda3.innerHTML = err.linea;
         celda4.innerHTML = err.columna;
         celda5.innerHTML = err.descripcion;
+        celda6.innerHTML = err.ambito;
         i++;
       }
     }else{
       var row0 =  document.getElementById('tablaDeSalida').insertRow( document.getElementById('tablaDeSalida').rows.length);
       var celda01 = row0.insertCell(0);
       celda01.innerHTML = "No se detectaron herrores en la Ejecución.";
+    }
+  }
+  function populateOptimizacion(optimizaciones){
+    var row0 =  document.getElementById('tablaDeSalida').insertRow( document.getElementById('tablaDeSalida').rows.length);
+      var celda01 = row0.insertCell(0);
+      var celda02 = row0.insertCell(1);
+      var celda03 = row0.insertCell(2);
+      var celda04 = row0.insertCell(3);
+      var celda05 = row0.insertCell(4);
+      celda01.innerHTML = "No.";
+      celda02.innerHTML = "Regla";
+      celda03.innerHTML = "Codigo ELiminado";
+      celda04.innerHTML = "Codigo Agregado";
+      celda05.innerHTML = "Fila";
+      let i=1;  
+      for(let err of optimizaciones){
+        var row =  document.getElementById('tablaDeSalida').insertRow( document.getElementById('tablaDeSalida').rows.length);
+        var celda1 = row.insertCell(0);
+        var celda2 = row.insertCell(1);
+        var celda3 = row.insertCell(2);
+        var celda4 = row.insertCell(3);
+        var celda5 = row.insertCell(4);
+        celda1.innerHTML = i;
+        celda2.innerHTML = err.regla;
+        celda3.innerHTML = err.eliminado;
+        celda4.innerHTML = err.agregado;
+        celda5.innerHTML = err.fila;
+        i++;
+      }
+  }
+  async function editableConsole(){
+    await setTimeout(null, 300);  
+    if(document.getElementById('consola').disabled==true){
+      document.getElementById('consola').disabled=false;
+    }else{
+      document.getElementById('consola').disabled=true;
     }
   }
   const classes = useStyles();
@@ -444,6 +491,13 @@ export default function UI() {
     setOpen(true);
     await setTimeout(null, 300);
     document.getElementById('AST_FRAME').style.display="block";
+   };
+   async function handleClickOptimizacion (){
+    data={};
+    setOpen(true);
+    await setTimeout(null, 300);
+    document.getElementById('AST_FRAME').style.display="none";
+    populateOptimizacion(reports.opt);
    };
   const handleClose = () => {
     data={};
@@ -548,7 +602,7 @@ export default function UI() {
           color="secondary"
           className={classes.button}
           startIcon={<PlayArrowIcon />}
-          onClick={()=>{Interpretar(intros.entrada)}}
+          onClick={()=>{upgrade()}}
         >
           Optimizar C3D
         </Button>
@@ -561,6 +615,16 @@ export default function UI() {
               onClick={()=>{handleClickOpenAST()}}
             >
               AST
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              className={classes.button}
+              startIcon={<NearMeIcon />}
+              onClick={()=>{handleClickOptimizacion()}}
+            >
+              Tabla De Optimización
             </Button>
               </div>
               <div style={{height:'30%', float:'inline-start', alignContent:'stretch'}}>
@@ -593,6 +657,16 @@ export default function UI() {
               onClick={handleClickOpenErTr}
             >
               Errores de Desanidación
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              className={classes.button}
+              startIcon={<CreateIcon />}
+              onClick={editableConsole}
+            >
+              Consola Editable
             </Button>
             
             </div>
