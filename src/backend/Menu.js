@@ -438,7 +438,7 @@ export default function UI() {
         celda2.innerHTML = err.regla;
         celda3.innerHTML = err.eliminado;
         celda4.innerHTML = err.agregado;
-        celda5.innerHTML = err.fila;
+        celda5.innerHTML = (Number(err.fila)+1);
         i++;
       }
   }
