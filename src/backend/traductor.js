@@ -452,35 +452,44 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
                 return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="number"){
-                //let temporal = nuevoTemporal();
-                //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
-                return {valor:[valorIzq, valorDer],tipo:"string"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorIzq.valor[0].valor+";\n";
+                consola.value+="t3="+valorDer.valor[0].valor+";\n";
+                consola.value+="conStrNum();\n";
+                return {valor:[{valor:temporal,tipo:"string"}],tipo:"string"};
             }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
-                return {valor:[{valor:temporal, tipo:"number"}],tipo:"number"};
+                return {valor:[{valor:temporal,tipo:"number"}],tipo:"number"};
             }else if(valorIzq.tipo=="number" && valorDer.tipo=="string"){
-                //let temporal = nuevoTemporal();
-                //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
-                return {valor:[valorIzq, valorDer],tipo:"string"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorDer.valor[0].valor+";\n";
+                consola.value+="t3="+valorIzq.valor[0].valor+";\n";
+                consola.value+="conNumStr();\n";
+                return {valor:[{valor:temporal,tipo:"number"}],tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
-                //let temporal = nuevoTemporal();
-                //consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
-                return {valor:[valorIzq, valorDer],tipo:"string"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorIzq.valor[0].valor+";\n";
+                consola.value+="t3="+valorDer.valor[0].valor+";\n";
+                consola.value+="concatenar();\n";
+                return {valor:[{valor:temporal,tipo:"string"}],tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="boolean"){
-             //   let temporal = nuevoTemporal();
-              //  consola.value+=temporal+"=h;\n";
-              //  consola.value+="t1="+valorIzq.valor[0].valor+";\n";
-              //  consola.value+="t3="+valorDer.valor[0].valor+";\n";
-               // consola.value+="conStrBool();\n";
-                return {valor:[{valor:[valorIzq, valorDer], tipo:"string"}],tipo:"string"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorIzq.valor[0].valor+";\n";
+                consola.value+="t3="+valorDer.valor[0].valor+";\n";
+                consola.value+="conStrBool();\n";
+                return {valor:[{valor:temporal,tipo:"string"}],tipo:"string"};
             }else if(valorIzq.tipo=="boolean" && valorDer.tipo=="string"){
-               // let temporal = nuevoTemporal();
-               // consola.value+=temporal+"=h;\n";
-              //  consola.value+="t1="+valorDer.valor[0].valor+";\n";
-               // consola.value+="t3="+valorIzq.valor[0].valor+";\n";
-               // consola.value+="conBoolStr();\n";
-                return {valor:[{valor:[valorIzq, valorDer], tipo:"string"}],tipo:"string"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\n";
+                consola.value+="t1="+valorDer.valor[0].valor+";\n";
+                consola.value+="t3="+valorIzq.valor[0].valor+";\n";
+                consola.value+="conBoolStr();\n";
+                return {valor:[{valor:temporal,tipo:"string"}],tipo:"string"};
             }else{
                 printedTable.erEj.push({descripcion:' No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo,tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
                 throw '>ERROR: No se puede realizar la operación de suma con los tipos:'+valorIzq.tipo+','+valorDer.tipo; 
@@ -2570,9 +2579,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         //funcion toUpperCase
         text+="//t0=inicio de cadena, t1=cambio de letra\nvoid toUpperCase(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L5;\nL1:\nif(heap[(int)t0]>=97) goto L2;\ngoto L3;\nL2:\nif(heap[(int)t0]<=122) goto L4;\nL3: \nt1=heap[(int)t0];\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL4:\nt1=heap[(int)t0];\nt1=t1-32;\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para concatenar string y boolean
-        text+="//t1=Cadena,t2,t3=boolean;\nvoid conStrBool(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: \nif(t3==1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=116;h=h+1;\nheap[(int)h]=114;\nh=h+1;\nheap[(int)h]=117;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\ngoto L5;\nL4:\nheap[(int)h]=102;\nh=h+1;\nheap[(int)h]=97;\nh=h+1;\nheap[(int)h]=108;h=h+1;\nheap[(int)h]=115;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\nL5:\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=boolean;\nvoid conStrBool(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1: \nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: \nif(t3==1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=116;\nh=h+1;\nheap[(int)h]=114;\nh=h+1;\nheap[(int)h]=117;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\ngoto L5;\nL4:\nheap[(int)h]=102;\nh=h+1;\nheap[(int)h]=97;\nh=h+1;\nheap[(int)h]=108;\nh=h+1;\nheap[(int)h]=115;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\nheap[(int)h]=-1;\nh=h+1;\nL5:\nreturn;\n}\n";
         //funcion para concatenar boolean y string
-        text+="//t1=Cadena,t2,t3=boolean;\nvoid conBoolStr(){\nL0:\nif(t3==1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=116;\nh=h+1;\nheap[(int)h]=114;\nh=h+1;\nheap[(int)h]=117;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\ngoto L3;\nL2:\nheap[(int)h]=102;\nh=h+1;\nheap[(int)h]=97;\nh=h+1;\nheap[(int)h]=108;\nh=h+1;\nheap[(int)h]=115;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\nL3: if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4: t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0; \nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=boolean;\nvoid conBoolStr(){\nL0:\nif(t3==1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=116;\nh=h+1;\nheap[(int)h]=114;\nh=h+1;\nheap[(int)h]=117;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\ngoto L3;\nL2:\nheap[(int)h]=102;\nh=h+1;\nheap[(int)h]=97;\nh=h+1;\nheap[(int)h]=108;\nh=h+1;\nheap[(int)h]=115;\nh=h+1;\nheap[(int)h]=101;\nh=h+1;\nL3:\n if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4: t2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L3; \nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion bool to String
         text+="//t3=boolean\nvoid boolToStr(){\nL0:\nif(t3==1) goto L1;\ngoto L2;\nL1:\nprintf(\"%c\", (char)116);\nprintf(\"%c\", (char)114);\nprintf(\"%c\", (char)117);\nprintf(\"%c\", (char)101);\ngoto L3;\nL2:\nprintf(\"%c\", (char)102);\nprintf(\"%c\", (char)97);\nprintf(\"%c\", (char)108);\nprintf(\"%c\", (char)115);\nprintf(\"%c\", (char)101);\nL3:\nreturn;\n}\n";
         //potencia
