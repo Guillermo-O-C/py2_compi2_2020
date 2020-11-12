@@ -219,7 +219,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                                 consola.value+='f:'+instruccion.fila+', c:'+instruccion.columna+'\n>ERROR: No se soporta la sobrecarga de funciones, id repetido :'+instruccion.id;  
                                 throw '>ERROR: No se soporta la sobrecarga de funciones, id repetido :'+instruccion.id;
                             }  
-                            let dataType = procesarDataType(instruccion.tipo);
+                            let dataType = LowerCase(procesarDataType(instruccion.tipo));
                             if(tablaDeSimbolos.existe(dataType.split("[]")[0], undefined, "type")==false && dataType.split("[]")[0]!="number" && dataType.split("[]")[0]!="string"&& dataType.split("[]")[0]!="void" && dataType.split("[]")[0]!="boolean"){
                                 consola.value+='f:'+instruccion.fila+', c:'+instruccion.columna+'\n>ERROR: Type '+dataType.split("[]")[0]+' no ha sido definido y es el tipo de retorno de la función:'+instruccion.id;  
                                 throw '>ERROR: Type '+dataType.split("[]")[0]+' no ha sido definido y es el tipo de retorno de la función:'+instruccion.id;  
@@ -237,7 +237,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     function scanForTypes(instrucciones, tablaDeSimbolos){
         for(let instruccion of instrucciones){
             if(instruccion.sentencia==SENTENCIAS.TYPE_DECLARATION){
-                tablaDeSimbolos.agregarType(instruccion.id, procesarAtributos(instruccion.atributos), instruccion.fila, instruccion.columna);
+                tablaDeSimbolos.agregarType(LowerCase(instruccion.id), procesarAtributos(instruccion.atributos), instruccion.fila, instruccion.columna);
             }
         }
     }
@@ -245,7 +245,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let tempAtributos = [];
         let temp = atributos;
         while(temp!="Epsilon"){
-            tempAtributos.push({id:temp.id, tipo: procesarDataType(temp.data_type)});
+            tempAtributos.push({id:LowerCase(temp.id), tipo: LowerCase(procesarDataType(temp.data_type))});
             temp=temp.next;
         }
         return tempAtributos;
@@ -276,7 +276,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let temporal=[];
         let temp = parametros;
         while(temp!="Epsilon"){
-            temporal.push({id:temp.id, tipo: procesarDataType(temp.tipo)});
+            temporal.push({id:LowerCase(temp.id), tipo: LowerCase(procesarDataType(temp.tipo))});
             temp=temp.siguiente;
         }
         return temporal;
@@ -419,12 +419,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function procesarTexto(expresion, tablaDeSimbolos, ambito, userType, verdadero, falso){
         if (expresion.sentencia === SENTENCIAS.LLAMADA) {
-            const valor = procesarLlamada(expresion, tablaDeSimbolos, ambito);
-            if(valor.tipo=="void"){
+            if(tablaDeSimbolos.obtenerFuncion(expresion.id, expresion.fila, expresion.columna, ambito).tipo=="void"){
                 //consola.value+='>f:'+expresion.fila+', c:'+expresion.columna+', ambito:'+ambito+'\nERROR: Función de tipo void como expresión.\n';  
                 printedTable.erEj.push({descripcion:' Función de tipo void como expresión.',tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
                 throw '>ERROR: Función de tipo void como expresión.'; 
             }
+            const valor = procesarLlamada(expresion, tablaDeSimbolos, ambito);
             //let temporal = nuevoTemporal();
             //consola.value+=temporal+"="+valor.valor+";\n";
             return {valor:[{valor:valor.valor,tipo:valor.tipo}], tipo:valor.tipo};
@@ -468,7 +468,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 consola.value+="t1="+valorDer.valor[0].valor+";\n";
                 consola.value+="t3="+valorIzq.valor[0].valor+";\n";
                 consola.value+="conNumStr();\n";
-                return {valor:[{valor:temporal,tipo:"number"}],tipo:"string"};
+                return {valor:[{valor:temporal,tipo:"string"}],tipo:"string"};
             }else if(valorIzq.tipo=="string" && valorDer.tipo=="string"){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"=h;\n";
@@ -1006,7 +1006,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let addTemp = (valor.tipo!=TIPO_OPERACION.AND &&valor.tipo!=TIPO_OPERACION.OR &&valor.tipo!=TIPO_OPERACION.NOT)?true:false;
         consola.value+="//comienza declaracion de variable "+id+"\n";
         //Verificar que exista el tipo de dato de la variable
-        data_type=procesarDataType(data_type);  //establece el tipo de la variable que es obligatorio declarar
+        data_type=LowerCase(procesarDataType(data_type));  //establece el tipo de la variable que es obligatorio declarar
         if(!tablaDeSimbolos.existe(data_type.split("[]")[0], undefined, "type") && data_type.split("[]")[0]!="number" && data_type.split("[]")[0]!="string" && data_type.split("[]")[0]!="boolean"){
             //consola.value+='>f:'+fila+', c:'+columna+', ambito:'+ambito+'\nERROR: No existe el tipo de dato:'+data_type.split("[]")[0]+'.\n';  
             printedTable.erEj.push({descripcion:'No existe el tipo de dato:'+data_type.split("[]")[0]+'.',tipo:"semántico", linea:fila, columna:columna,ambito:ambito});
@@ -1127,12 +1127,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function procesarExpresionNumerica(expresion, tablaDeSimbolos, ambito, userType, verdadero, falso) {
         if (expresion.sentencia === SENTENCIAS.LLAMADA) {
-            const valor = procesarLlamada(expresion, tablaDeSimbolos, ambito);
-            if(valor.tipo=="void"){
+            if(tablaDeSimbolos.obtenerFuncion(expresion.id, expresion.fila, expresion.columna, ambito).tipo=="void"){
                 //consola.value+='>f:'+expresion.fila+', c:'+expresion.columna+', ambito:'+ambito+'\nERROR: Función de tipo void como expresión.\n';  
                 printedTable.erEj.push({descripcion:' Función de tipo void como expresión.',tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
                 throw '>ERROR: Función de tipo void como expresión.'; 
             }
+            const valor = procesarLlamada(expresion, tablaDeSimbolos, ambito);
+            /*if(valor.tipo=="void"){
+                //consola.value+='>f:'+expresion.fila+', c:'+expresion.columna+', ambito:'+ambito+'\nERROR: Función de tipo void como expresión.\n';  
+                printedTable.erEj.push({descripcion:' Función de tipo void como expresión.',tipo:"semántico", linea:expresion.fila, columna:expresion.columna,ambito:ambito});
+                throw '>ERROR: Función de tipo void como expresión.'; 
+            }*/
             //let temporal = nuevoTemporal();
             //consola.value+=temporal+"="+valor.valor+";\n";
             return {valor:valor.valor,tipo:valor.tipo};
@@ -1812,7 +1817,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let type = tablaDeSimbolos.obtenerType(typeID);
         let contador = 0;
         for(let attribute of type.atributos){
-            if(attribute.id==attributeID){
+            if(LowerCase(attribute.id)==LowerCase(attributeID)){
                 return {valor:attribute, posicion:contador};
             }
             contador++;
@@ -2241,7 +2246,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         if (instruccion.paso.paso == "++") {
             consola.value+=inicio+":\n";
             let condicion = procesarExpresionNumerica(instruccion.final, tablaDeSimbolos, ambito, undefined, verdadero, falso);
-            consola.value+="if("+condicion.valor+") goto "+verdadero+";\ngoto "+falso+";\n";
+            if(instruccion.final.tipo!=TIPO_OPERACION.AND&&instruccion.final.tipo!=TIPO_OPERACION.OR&&instruccion.final.tipo!=TIPO_OPERACION.NOT){
+                consola.value+="if("+condicion.valor+") goto "+verdadero+";\ngoto "+falso+";\n";
+            }
             consola.value+=actualizar+":\n";
             let identificador = tablaDeSimbolos.getSimbol(instruccionID,SplitAmbitos(ambito), "inFor", "inFor");
             let pila=(identificador.ambito=="Global")?"heap":"stack";
@@ -2564,16 +2571,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "void imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L4;\nL1: if(heap[(int)t0]>=299) goto L2;\nif(heap[(int)t0]<-1) goto L3;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nt1= heap[(int)t0];\nt2=t1-300;\nprintf(\"%f\",t2);\nt0=t0+1;\ngoto L0;\nL3:\nt1= heap[(int)t0];\nprintf(\"%f\",t1);\nt0=t0+1;\ngoto L0;\nL4:\nreturn;\n}";
+        let text = "void imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L4;\nL1: if(heap[(int)t0]>=299) goto L2;\nif(heap[(int)t0]<-1) goto L3;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nt1= heap[(int)t0];\nt2=t1-300;\nprintf(\"%f\",t2);\nt0=t0+1;\ngoto L0;\nL3:\nt1= heap[(int)t0];\nprintf(\"%f\",t1);\nt0=t0+1;\ngoto L0;\nL4:\nreturn;\n}\n";
         //función para concatenar 2 strings
         text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
         text+="//t4 es la cadena \nvoid strLength(){\nL0:\nif(heap[(int)t4]!=-1) goto L1;\ngoto L2;\nL1:\nt4=t4+1;\ngoto L0;\nL2:\n return;\n}\n";
         //funcion para concatenar una string y un numero 
-        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\nif(t3<-1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=t3;\nh=h+1;\ngoto L5;\nL4:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L5;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\nif(t3<-1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=t3;\nh=h+1;\ngoto L5;\nL4:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L5;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para concatenar un número y string
-        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nif(t3<-1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=t3;\nh=h+1;\ngoto L3;\nL2:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L3;\nL3: if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L1;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nif(t3<-1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=t3;\nh=h+1;\ngoto L3;\nL2:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L3;\nL3:\n if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L3;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion toLowerCase
         text+="//t0=inicio de cadena, t1=cambio de letra\nvoid toLowerCase(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L5;\nL1:\nif(heap[(int)t0]>=65) goto L2;\ngoto L3;\nL2:\nif(heap[(int)t0]<=90) goto L4;\nL3: \nt1=heap[(int)t0];\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL4:\nt1=heap[(int)t0];\nt1=t1+32;\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion toUpperCase
@@ -2820,5 +2827,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             temp=temp.next_acc;
         }
         return {valor: principalValue.valor, tipo:principalValue.tipo, reference:true};   
+    }
+    function LowerCase(value) {
+        if(value!=undefined){
+            return value.toString().toLowerCase();
+        }
     }
 }

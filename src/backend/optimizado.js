@@ -68,6 +68,12 @@ export default function Optimizar(consola, printedTable, tablero){
                             printedTable.opt.push({regla:13, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\/(\b)*1/g,''), fila:line});
                             codigo[line]=String(codigo[line]).replace(/\/(\b)*1/g,'');
                         }
+                    }else if(String(codigo[line]).match(/\*(\b)*0(\b)*;/)!=null){
+                        printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=[^\*]+\*(\b)*0(\b)*;/g,'=0;'), fila:line});
+                        codigo[line]=String(codigo[line]).replace(/=[^\*]+\*(\b)*0(\b)*;/g,'=0;');
+                    }else if(String(codigo[line]).match(/=(\b)*0(\b)*\*/g,'=0;')!=null){
+                        printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\b)*0(\b)*\*[^\*]+;/g,'=0;'), fila:line});
+                        codigo[line]=String(codigo[line]).replace(/=(\b)*0(\b)*\*[^\*]+;/g,'=0;');
                     }
                 }else{
                     if(String(codigo[line]).match(/\+(\b)*0(\b)*;/)!=null){
@@ -88,6 +94,12 @@ export default function Optimizar(consola, printedTable, tablero){
                     }else if(String(codigo[line]).match(/\/(\b)*1(\b)*;/)!=null){  
                         printedTable.opt.push({regla:13, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\/(\b)*1/g,''), fila:line});
                         codigo[line]=String(codigo[line]).replace(/\/(\b)*1/g,'');
+                    }else if(String(codigo[line]).match(/\*(\b)*0(\b)*;/)!=null){
+                        printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=[^\*]\*(\b)*0(\b)*;/g,'=0;'), fila:line});
+                        codigo[line]=String(codigo[line]).replace(/=[^\*]\*(\b)*0(\b)*;/g,'=0;');
+                    }else if(String(codigo[line]).match(/=(\b)*0(\b)*\*/g,'=0;')!=null){
+                        printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\b)*0(\b)*\*[^\*]+;/g,'=0;'), fila:line});
+                        codigo[line]=String(codigo[line]).replace(/=(\b)*0(\b)*\*[^\*]+;/g,'=0;');
                     }
                 }
             }
@@ -221,4 +233,20 @@ export default function Optimizar(consola, printedTable, tablero){
             }            
         }
     }    
+    function regla15(){
+        for(let line in codigo){
+            if(String(codigo[line]).match(/\/\//)==null){
+                    if(String(codigo[line]).match(/\*(\b)*0(\b)*;/)!=null){
+                        printedTable.opt.push({regla:12, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=[^\*]\*(\b)*0(\b)*;/g,'=0;'), fila:line});
+                        codigo[line]=String(codigo[line]).replace(/=[^\*]\*(\b)*0(\b)*;/g,'=0;');
+                    }else if(String(codigo[line]).match(/=(\b)*0(\b)*\*/g,'=0;')!=null){
+                        printedTable.opt.push({regla:12, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\b)*0(\b)*\*[^\*];/g,'=0;'), fila:line});
+                        codigo[line]=String(codigo[line]).replace(/=(\b)*0(\b)*\*[^\*];/g,'=0;');
+                    }
+            }            
+        }
+    }  
+    function regla14(){
+
+    }
 }

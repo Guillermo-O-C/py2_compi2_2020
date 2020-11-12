@@ -93,7 +93,7 @@ export default function UI() {
     document.getElementById('consola').value="";
     let AST;
     try {
-        AST = parser.parse(entry.toLowerCase());
+        AST = parser.parse(entry);
         console.log(JSON.stringify(AST, null, 2));
         document.getElementById('consola').value=JSON.stringify(AST, null, 2);
         intros.AST=AST;
