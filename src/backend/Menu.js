@@ -226,7 +226,7 @@ export default function UI() {
         celda3.innerHTML = err.linea;
         celda4.innerHTML = err.columna;
         celda5.innerHTML = err.descripcion;
-        celda5.innerHTML = err.ambito;
+        celda6.innerHTML = err.ambito;
         i++;
       }
     }else{
@@ -421,11 +421,13 @@ export default function UI() {
       var celda03 = row0.insertCell(2);
       var celda04 = row0.insertCell(3);
       var celda05 = row0.insertCell(4);
+      var celda06 = row0.insertCell(5);
       celda01.innerHTML = "No.";
-      celda02.innerHTML = "Regla";
-      celda03.innerHTML = "Codigo ELiminado";
-      celda04.innerHTML = "Codigo Agregado";
-      celda05.innerHTML = "Fila";
+      celda02.innerHTML = "Tipo de Optimización";
+      celda03.innerHTML = "Regla";
+      celda04.innerHTML = "Codigo ELiminado";
+      celda05.innerHTML = "Codigo Agregado";
+      celda06.innerHTML = "Fila";
       let i=1;  
       for(let err of optimizaciones){
         var row =  document.getElementById('tablaDeSalida').insertRow( document.getElementById('tablaDeSalida').rows.length);
@@ -434,11 +436,13 @@ export default function UI() {
         var celda3 = row.insertCell(2);
         var celda4 = row.insertCell(3);
         var celda5 = row.insertCell(4);
+        var celda6 = row.insertCell(5);
         celda1.innerHTML = i;
-        celda2.innerHTML = err.regla;
-        celda3.innerHTML = err.eliminado;
-        celda4.innerHTML = err.agregado;
-        celda5.innerHTML = (Number(err.fila)+1);
+        celda2.innerHTML = (err.regla<=4)?"Bloques":"Mirilla";
+        celda3.innerHTML = err.regla;
+        celda4.innerHTML = err.eliminado;
+        celda5.innerHTML = err.agregado;
+        celda6.innerHTML = (Number(err.fila)+1);
         i++;
       }
   }

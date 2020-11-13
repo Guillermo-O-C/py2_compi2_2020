@@ -177,12 +177,21 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                         printedTable.erEj.push({descripcion:'Return fuera de función.',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna,ambito:ambito});
                         throw '>ERROR: Return fuera de función.'; 
                     }
+                    let funcion = tablaDeSimbolos.obtenerFuncion(ambito, undefined, undefined, ambito);
                     if(instruccion.valor=="Epsilon"){
                         //no devuelvo nada porque es un return sin valor
                         //consola.value+="stack[(int)p]=0;";
+                        if(funcion.tipo!="void"){
+                            printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + funcion.tipo + ' no se puede convertir en void',tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna, ambito:ambito}); 
+                            throw '>ERROR: Incompatibilidad de tipos: ' + funcion.tipo + ' no se puede convertir en void\n';                             
+                        }
                         consola.value+="goto "+retorno+";\n";
                     }else{
                         let valor=procesarExpresionNumerica(instruccion.valor, tablaDeSimbolos, ambito);
+                        if(funcion.tipo!=valor.tipo){
+                            printedTable.erEj.push({descripcion:'Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en '+funcion.tipo,tipo:"semántico", linea:instruccion.fila, columna:instruccion.columna, ambito:ambito}); 
+                            throw '>ERROR: Incompatibilidad de tipos: ' + valor.tipo + ' no se puede convertir en '+funcion.tipo+'\n';                             
+                        }
                         consola.value+="stack[(int)p]="+valor.valor+";\n";
                         consola.value+="goto "+retorno+";\n";
                     }
@@ -2613,16 +2622,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
     }
     function funcionesNativas(){
         //funcion para imprimir strings
-        let text = "void imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L4;\nL1: if(heap[(int)t0]>=299) goto L2;\nif(heap[(int)t0]<-1) goto L3;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nt1= heap[(int)t0];\nt2=t1-300;\nprintf(\"%f\",t2);\nt0=t0+1;\ngoto L0;\nL3:\nt1= heap[(int)t0];\nprintf(\"%f\",t1);\nt0=t0+1;\ngoto L0;\nL4:\nreturn;\n}\n";
+        let text = "void imprimir(){\nL0:\n if(heap[(int)t0]!=-1) goto L1;\ngoto L4;\nL1:\n if(heap[(int)t0]>=299) goto L2;\nif(heap[(int)t0]<-1) goto L3;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nt1= heap[(int)t0];\nt2=t1-300;\nprintf(\"%f\",t2);\nt0=t0+1;\ngoto L0;\nL3:\nt1= heap[(int)t0];\nprintf(\"%f\",t1);\nt0=t0+1;\ngoto L0;\nL4:\nreturn;\n}\n";
         //función para concatenar 2 strings
         text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\n if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
         text+="//t4 es la cadena \nvoid strLength(){\nL0:\nif(heap[(int)t4]!=-1) goto L1;\ngoto L2;\nL1:\nt4=t4+1;\ngoto L0;\nL2:\n return;\n}\n";
         //funcion para concatenar una string y un numero 
-        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\nif(t3<-1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=t3;\nh=h+1;\ngoto L5;\nL4:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L5;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conStrNum(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\nif(t3<-1) goto L3;\ngoto L4;\nL3:\nheap[(int)h]=t3;\nh=h+1;\ngoto L5;\nL4:\nt3=t3+300;\nheap[(int)h]=t3;\nh=h+1;\ngoto L5;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para concatenar un número y string
-        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nif(t3<-1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=t3;\nh=h+1;\ngoto L3;\nL2:\nheap[(int)h]=t3+300;\nh=h+1;\ngoto L3;\nL3:\n if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L3;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
+        text+="//t1=Cadena,t2,t3=numero\nvoid conNumStr(){\nL0:\nif(t3<-1) goto L1;\ngoto L2;\nL1:\nheap[(int)h]=t3;\nh=h+1;\ngoto L3;\nL2:\nt3=t3+300;\nheap[(int)h]=t3;\nh=h+1;\ngoto L3;\nL3:\n if(heap[(int)t1]!=-1) goto L4;\ngoto L5;\nL4:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L3;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion toLowerCase
         text+="//t0=inicio de cadena, t1=cambio de letra\nvoid toLowerCase(){\nL0:\nif(heap[(int)t0]!=-1) goto L1;\ngoto L5;\nL1:\nif(heap[(int)t0]>=65) goto L2;\ngoto L3;\nL2:\nif(heap[(int)t0]<=90) goto L4;\nL3: \nt1=heap[(int)t0];\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL4:\nt1=heap[(int)t0];\nt1=t1+32;\nheap[(int)h]=t1;\nh=h+1;\nt0=t0+1;\ngoto L0;\nL5:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion toUpperCase
