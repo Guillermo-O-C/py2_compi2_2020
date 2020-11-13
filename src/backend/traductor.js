@@ -2399,7 +2399,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         let temporal2=nuevoTemporal(),temporal3=nuevoTemporal(),temporal4=nuevoTemporal(), size=nuevoTemporal(),inicio = nuevaEtiqueta(), actualizacion =  nuevaEtiqueta(), ejecucion = nuevaEtiqueta(), final = nuevaEtiqueta();
         consola.value+="//comienza For In\n";
         consola.value+=temporal2+"=h;\n";
-        consola.value+="heap[(int)"+temporal2+"]=-1;\nh=h+1;";
+        consola.value+="heap[(int)"+temporal2+"]=-1;\nh=h+1;\n";
         consola.value+=size+"=heap[(int)"+conjunto.valor+"];\n";
         consola.value+="goto "+actualizacion+";\n";
         consola.value+=inicio+":\n";
@@ -2408,7 +2408,9 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         consola.value+="goto "+final+";\n";
         consola.value+=actualizacion+":\n";
         consola.value+=temporal3+"=heap[(int)"+temporal2+"];\n";
-        consola.value+="heap[(int)"+temporal2+"]="+temporal3+"+1;\n";
+        let temporal = nuevoTemporal();
+        consola.value+=temporal+"="+temporal3+"+1;\n";
+        consola.value+="heap[(int)"+temporal2+"]="+temporal+";\n";
         tablaDeSimbolos.agregar(TIPO_VARIABLE.LET, instruccion.variable, "number", "Global", "temp", "temp", temporal2);
         consola.value+="goto "+inicio+";\n";
         //se pasa el ámbito como global para que si son number/bollean los busque en el hea

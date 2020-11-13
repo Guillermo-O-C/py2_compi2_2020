@@ -143,6 +143,9 @@ export default function Optimizar(consola, printedTable, tablero){
                                 }
                             }
                         }
+                    }else if(String(codigo[line]).match(/=(\s)*0(\s)*\//g)!=null){
+                        printedTable.opt.push({regla:16, eliminado:codigo[line], agregado:codigo[line].split("=")[0]+"=0;", fila:line});
+                        codigo[line]= String(codigo[line]).replace(codigo[line].split("=")[1], '0;');   
                     }
                 }else{
                     if(String(codigo[line]).match(/\+(\s)*0(\s)*;/g)!=null){
@@ -231,6 +234,9 @@ export default function Optimizar(consola, printedTable, tablero){
                                 }
                             }
                         }
+                    }else if(String(codigo[line]).match(/=(\s)*0(\s)*\//g)!=null){
+                        printedTable.opt.push({regla:16, eliminado:codigo[line], agregado:codigo[line].split("=")[0]+"=0;", fila:line});
+                        codigo[line]= String(codigo[line]).replace(codigo[line].split("=")[1], '0;');   
                     }
                 }
             }
@@ -387,6 +393,16 @@ export default function Optimizar(consola, printedTable, tablero){
             }
         }
     }
+    function regla6_10(){
+        for(let line in codigo){
+            if(String(codigo[line]).match(/\/\//)==null){
+                if(String(codigo[line]).match(/=(\s)*0(\s)*\//g,'=0;')!=null){
+                    printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\s)*0(\s)*\*[^\*]+;/g,'=0;'), fila:line});
+                    codigo[line]=String(codigo[line]).replace(/=(\s)*0(\s)*\/[^;]+;/g,'=0;');
+                }
+            }
+        }
+    }
     function regla1(){
         for(let line in codigo){
             if(String(codigo[line]).match(/\/\//g)==null){
@@ -485,19 +501,12 @@ export default function Optimizar(consola, printedTable, tablero){
             }
         }  
     }
-    function regla_14(){
+    function regla_16(){
         for(let line in codigo){
             if(String(codigo[line]).match(/\/\//g)==null){
-                if(String(codigo[line]).match(/\*(\s)*2(\s)*;/g)!=null){
-                    let derecho = codigo[line].split("=")[1];
-                    let repetir = derecho.split("*")[0];
-                    printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';'), fila:line});
-                    codigo[line]= String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';');   
-                }else if(String(codigo[line]).match(/=(\s)*2(\s)*\*;/g)!=null){
-                    let derecho = codigo[line].split("=")[1];
-                    let repetir = derecho.split("*")[1];
-                    printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\s)*2(\s)*\*;/g, '='+repetir+'+'), fila:line});
-                    codigo[line]= String(codigo[line]).replace(/=(\s)*2(\s)*\*;/g, '+'+repetir+';');   
+                if(String(codigo[line]).match(/=(\s)*0(\s)*\/;/g)!=null){
+                    printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:codigo[line].split("=")[0]+"=0;", fila:line});
+                    codigo[line]= String(codigo[line]).replace(codigo[line].split("=")[1], '=0;');   
                 }
             }
         }        
