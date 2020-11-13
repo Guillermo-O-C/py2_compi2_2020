@@ -16,7 +16,7 @@ export default function Optimizar(consola, printedTable, tablero){
     }
     function aplicarReglas(){        
         for(let line in codigo){
-            if(String(codigo[line]).match(/\/\//)==null){
+            if(String(codigo[line]).match(/\/\//)==null && codigo[line]!=""){
                 let stack = String(codigo[line]).match(/stack/);
                 let heap = String(codigo[line]).match(/heap/);
                 let te = String(codigo[line]).match(/goto(\s)+L(\d)+;/g);
@@ -75,6 +75,19 @@ export default function Optimizar(consola, printedTable, tablero){
                             printedTable.opt.push({regla:13, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\/(\s)*1/g,''), fila:line});
                             codigo[line]=String(codigo[line]).replace(/\/(\s)*1/g,'');
                         }
+                    }else if(String(codigo[line]).match(/\*(\s)*2(\s)*;/g)!=null){
+                        let derecho = codigo[line].split("=")[1];
+                        let repetir = derecho.split("*")[0];
+                        printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';'), fila:line});
+                        codigo[line]= String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';');
+                        codigo[line]= String(codigo[line]).replace(/\s/g, '');
+                    }else if(String(codigo[line]).match(/=(\s)*2(\s)*\*/g)!=null){
+                        let derecho = codigo[line].split("=")[1];
+                        let repetir = derecho.split("*")[1];
+                        repetir = repetir.split(";")[0];
+                        printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\s)*2(\s)*\*/g, '='+repetir+'+'), fila:line});
+                        codigo[line]= String(codigo[line]).replace(/=(\s)*2(\s)*\*/g, '='+repetir+'+');   
+                        codigo[line]= String(codigo[line]).replace(/\s/g, '');  
                     }else if(String(codigo[line]).match(/\*(\s)*0(\s)*;/g)!=null){
                         printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=[^\*]+\*(\s)*0(\s)*;/g,'=0;'), fila:line});
                         codigo[line]=String(codigo[line]).replace(/=[^\*]+\*(\s)*0(\s)*;/g,'=0;');
@@ -91,6 +104,45 @@ export default function Optimizar(consola, printedTable, tablero){
                                 printedTable.opt.push({regla:1, eliminado:"codigo eliminado de la línea "+(Number(line)+1)+" hasta "+(salto)+".", agregado:'', fila:line});
                             }
                         }                    
+                    }else if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<|<=|>|>=|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
+                        if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<|<=|>|>=|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
+                            if(String(codigo[Number(line)+1]).match(/goto(\s)+L(\d)+/g)!=null){//nextLine is goto
+                                let valIzq, valDer, op;
+                                valIzq=String(codigo[line]).match(/\((\s)*\d+/g)[0];
+                                valIzq=String(valIzq).replace(/\(/, '');
+                                valDer=String(codigo[line]).match(/\d+(\s)*\)/g)[0];
+                                valDer=String(valDer).replace(/\)/, '');
+                                op= String(codigo[line]).match(/(<|<=|>|>=|!=|==)/)[0];
+                                let result;
+                                switch(op){
+                                    case '<':
+                                        result = Number(valIzq)<Number(valDer);
+                                        break;
+                                    case '<=':
+                                        result = Number(valIzq)<=Number(valDer);
+                                        break;
+                                    case '>':
+                                        result = Number(valIzq)>Number(valDer);
+                                        break;
+                                    case '>=':
+                                        result = Number(valIzq)>=Number(valDer);
+                                        break;
+                                    case '!=':
+                                        result = Number(valIzq)!=Number(valDer);
+                                        break;
+                                    case '==':
+                                        result = Number(valIzq)==Number(valDer);
+                                        break;
+                                }
+                                if(result){
+                                    printedTable.opt.push({regla:3, eliminado:codigo[Number(line)+1], agregado:'', fila:line});
+                                    codigo[Number(line)+1]="";
+                                }else{
+                                    printedTable.opt.push({regla:4, eliminado:codigo[Number(line)], agregado:'', fila:line});
+                                    codigo[Number(line)]="";
+                                }
+                            }
+                        }
                     }
                 }else{
                     if(String(codigo[line]).match(/\+(\s)*0(\s)*;/g)!=null){
@@ -111,6 +163,19 @@ export default function Optimizar(consola, printedTable, tablero){
                     }else if(String(codigo[line]).match(/\/(\s)*1(\s)*;/g)!=null){  
                         printedTable.opt.push({regla:13, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\/(\s)*1/g,''), fila:line});
                         codigo[line]=String(codigo[line]).replace(/\/(\s)*1/g,'');
+                    }else if(String(codigo[line]).match(/\*(\s)*2(\s)*;/g)!=null){
+                        let derecho = codigo[line].split("=")[1];
+                        let repetir = derecho.split("*")[0];
+                        printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';'), fila:line});
+                        codigo[line]= String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';');  
+                        codigo[line]= String(codigo[line]).replace(/\s/g, '');   
+                    }else if(String(codigo[line]).match(/=(\s)*2(\s)*\*/g)!=null){
+                        let derecho = codigo[line].split("=")[1];
+                        let repetir = derecho.split("*")[1];
+                        repetir = repetir.split(";")[0];
+                        printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\s)*2(\s)*\*/g, '='+repetir+'+'), fila:line});
+                        codigo[line]= String(codigo[line]).replace(/=(\s)*2(\s)*\*/g, '='+repetir+'+'); 
+                        codigo[line]= String(codigo[line]).replace(/\s/g, '');  
                     }else if(String(codigo[line]).match(/\*(\s)*0(\s)*;/g)!=null){
                         printedTable.opt.push({regla:15, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=[^\*]\*(\s)*0(\s)*;/g,'=0;'), fila:line});
                         codigo[line]=String(codigo[line]).replace(/=[^\*]\*(\s)*0(\s)*;/g,'=0;');
@@ -127,6 +192,45 @@ export default function Optimizar(consola, printedTable, tablero){
                                 printedTable.opt.push({regla:1, eliminado:"codigo eliminado de la línea "+(Number(line)+1)+" hasta "+(salto)+".", agregado:'', fila:line});
                             }
                         }                    
+                    }else if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<|<=|>|>=|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
+                        if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<|<=|>|>=|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
+                            if(String(codigo[Number(line)+1]).match(/goto(\s)+L(\d)+/g)!=null){//nextLine is goto
+                                let valIzq, valDer, op;
+                                valIzq=String(codigo[line]).match(/\((\s)*\d+/g)[0];
+                                valIzq=String(valIzq).replace(/\(/, '');
+                                valDer=String(codigo[line]).match(/\d+(\s)*\)/g)[0];
+                                valDer=String(valDer).replace(/\)/, '');
+                                op= String(codigo[line]).match(/(<|<=|>|>=|!=|==)/)[0];
+                                let result;
+                                switch(op){
+                                    case '<':
+                                        result = Number(valIzq)<Number(valDer);
+                                        break;
+                                    case '<=':
+                                        result = Number(valIzq)<=Number(valDer);
+                                        break;
+                                    case '>':
+                                        result = Number(valIzq)>Number(valDer);
+                                        break;
+                                    case '>=':
+                                        result = Number(valIzq)>=Number(valDer);
+                                        break;
+                                    case '!=':
+                                        result = Number(valIzq)!=Number(valDer);
+                                        break;
+                                    case '==':
+                                        result = Number(valIzq)==Number(valDer);
+                                        break;
+                                }
+                                if(result){
+                                    printedTable.opt.push({regla:3, eliminado:codigo[Number(line)+1], agregado:'', fila:line});
+                                    codigo[Number(line)+1]="";
+                                }else{
+                                    printedTable.opt.push({regla:4, eliminado:codigo[Number(line)], agregado:'', fila:line});
+                                    codigo[Number(line)]="";
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -310,7 +414,92 @@ export default function Optimizar(consola, printedTable, tablero){
                 return -1;
             }else if(String(codigo[i]).match(/if/g)!=null){
                 return -1;
+            }else if(String(codigo[i]).match(/}/g)!=null){
+                return -1
+            }else if(i==codigo.length-1){
+                return -1;
             }
         }
+    }
+    function nextLabels(posicion, Vtrue, Vfalse){
+        let flag = false;
+        for(let i = posicion;i<codigo.length;i++){
+            if(String(codigo[i]).match(/L(\d)+(\s)*:/g)!=null){
+                if(!flag){
+                    if(Vtrue==String(codigo[i]).match(/L(\d)+/g)[0]){
+                        flag = true;
+                    }
+                }else{
+
+                }
+            }else if(String(codigo[i]).match(/return/g)!=null){
+                return -1;
+            }else if(String(codigo[i]).match(/if/g)!=null){
+                return -1;
+            }
+        }
+    }
+    function regla3_4(){
+        for(let line in codigo){
+            if(String(codigo[line]).match(/\/\//g)==null){
+                if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<|<=|>|>=|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
+                    if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<|<=|>|>=|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
+                        if(String(codigo[Number(line)+1]).match(/goto(\s)+L(\d)+/g)!=null){//nextLine is goto
+                            let valIzq, valDer, op;
+                            valIzq=String(codigo[line]).match(/\((\s)*\d+/g)[0];
+                            valIzq=String(valIzq).replace(/\(/, '');
+                            valDer=String(codigo[line]).match(/\d+(\s)*\)/g)[0];
+                            valDer=String(valDer).replace(/\)/, '');
+                            op= String(codigo[line]).match(/(<|<=|>|>=|!=|==)/)[0];
+                            let result;
+                            switch(op){
+                                case '<':
+                                    result = Number(valIzq)<Number(valDer);
+                                    break;
+                                case '<=':
+                                    result = Number(valIzq)<=Number(valDer);
+                                    break;
+                                case '>':
+                                    result = Number(valIzq)>Number(valDer);
+                                    break;
+                                case '>=':
+                                    result = Number(valIzq)>=Number(valDer);
+                                    break;
+                                case '!=':
+                                    result = Number(valIzq)!=Number(valDer);
+                                    break;
+                                case '==':
+                                    result = Number(valIzq)==Number(valDer);
+                                    break;
+                            }
+                            if(result){
+                                printedTable.opt.push({regla:3, eliminado:codigo[Number(line)+1], agregado:'', fila:line});
+                                codigo[Number(line)+1]="";
+                            }else{
+                                printedTable.opt.push({regla:4, eliminado:codigo[Number(line)], agregado:'', fila:line});
+                                codigo[Number(line)]="";
+                            }
+                        }
+                    }
+                }
+            }
+        }  
+    }
+    function regla_14(){
+        for(let line in codigo){
+            if(String(codigo[line]).match(/\/\//g)==null){
+                if(String(codigo[line]).match(/\*(\s)*2(\s)*;/g)!=null){
+                    let derecho = codigo[line].split("=")[1];
+                    let repetir = derecho.split("*")[0];
+                    printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';'), fila:line});
+                    codigo[line]= String(codigo[line]).replace(/\*(\s)*2(\s)*;/g, '+'+repetir+';');   
+                }else if(String(codigo[line]).match(/=(\s)*2(\s)*\*;/g)!=null){
+                    let derecho = codigo[line].split("=")[1];
+                    let repetir = derecho.split("*")[1];
+                    printedTable.opt.push({regla:14, eliminado:codigo[line], agregado:String(codigo[line]).replace(/=(\s)*2(\s)*\*;/g, '='+repetir+'+'), fila:line});
+                    codigo[line]= String(codigo[line]).replace(/=(\s)*2(\s)*\*;/g, '+'+repetir+';');   
+                }
+            }
+        }        
     }
 }

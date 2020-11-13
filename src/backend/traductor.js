@@ -443,6 +443,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             //si valIzq es string devuleve string else number
             const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.valor[0].tipo=="boolean" && String(valorIzq.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor[0].valor+";\n";
+                valorIzq.valor[0].valor=temporal;
+            }
+            if(valorDer.valor[0].tipo=="boolean" && String(valorDer.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorDer.valor[0].valor+";\n";
+                valorDer.valor[0].valor=temporal;
+            }
             if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"+"+valorDer.valor[0].valor+";\n";
@@ -663,12 +673,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"=="+valorDer.valor[0].valor+";\n";
                 return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};*/
-                return {valor:[{valor:valorIzq.valor[0].valor+"=="+valorDer.valor[0].valor,tipo:"boolean"}],tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorIzq.valor[0].valor+"];\n";
+                return {valor:[{valor:temporal+"=="+valorDer.valor[0].valor,tipo:"boolean"}],tipo:"boolean"};
             }else if( valorIzq.valor[0].valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */ && valorDer.tipo=="string" ){/*
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"=="+valorDer.valor[0].valor+";\n";
                 return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};*/
-                return {valor:[{valor:valorIzq.valor[0].valor+"=="+valorDer.valor[0].valor,tipo:"boolean"}],tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorDer.valor[0].valor+"];\n";
+                return {valor:[{valor:valorIzq.valor[0].valor+"=="+temporal,tipo:"boolean"}],tipo:"boolean"};
             }else if( valorIzq.valor[0].valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */  && valorDer.valor[0].valor=="0" && valorDer.tipo!="number"/*el valor derecho es null */){
                 /*
                 let temporal = nuevoTemporal();
@@ -742,12 +756,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 /* let temporal = nuevoTemporal();
                  consola.value+=temporal+"="+valorIzq.valor[0].valor+"!="+valorDer.valor[0].valor+";\n";
                  return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};*/
-                 return {valor:[{valor:valorIzq.valor[0].valor+"!="+valorDer.valor[0].valor,tipo:"boolean"}],tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorIzq.valor[0].valor+"];\n";
+                 return {valor:[{valor:temporal+"!="+valorDer.valor[0].valor,tipo:"boolean"}],tipo:"boolean"};
             }else if( valorIzq.valor[0].valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */ && valorDer.tipo=="string" ){
                 /* let temporal = nuevoTemporal();
                  consola.value+=temporal+"="+valorIzq.valor[0].valor+"!="+valorDer.valor[0].valor+";\n";
                  return {valor:[{valor:temporal,tipo:"boolean"}],tipo:"boolean"};*/
-                 return {valor:[{valor:valorIzq.valor[0].valor+"!="+valorDer.valor[0].valor,tipo:"boolean"}],tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorDer.valor[0].valor+"];\n";
+                 return {valor:[{valor:valorIzq.valor[0].valor+"!="+temporal,tipo:"boolean"}],tipo:"boolean"};
             }else if( valorIzq.valor[0].valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */  && valorDer.valor[0].valor=="0" && valorDer.tipo!="number"/*el valor derecho es null */){
                 /* let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+"!="+valorDer.valor[0].valor+";\n";
@@ -878,7 +896,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 if(verdadero==undefined && falso == undefined){
                     let pos_temp=nuevoTemporal(), final = nuevaEtiqueta();
                     if(expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT&&expresion.operandoIzq.tipo!=TIPO_OPERACION.OR){
-                        consola.value+="if("+valorIzq.valor+") goto "+tempFalso+";\n";
+                        consola.value+="if("+valorIzq.valor[0].valor+") goto "+tempFalso+";\n";
                         consola.value+="goto "+tempVerdadero+";\n";
                     }
                     consola.value+=tempVerdadero+":\n";
@@ -887,8 +905,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=tempFalso+":\n";
                     consola.value+=pos_temp+"=0;\n";
                     consola.value+=final+":\n";
-                    return {valor:pos_temp,tipo:"boolean"};
+                    return {valor:[{valor:pos_temp,tipo:"boolean"}],tipo:"boolean"};
                 }else{
+                    if(expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT&&expresion.operandoIzq.tipo!=TIPO_OPERACION.OR){
+                        consola.value+="if("+valorIzq.valor[0].valor+") goto "+tempFalso+";\n";
+                        consola.value+="goto "+tempVerdadero+";\n";
+                    }
                     return {verdadero:verdadero, falso:falso,tipo:"boolean"};            
                 }
             }else{
@@ -1155,6 +1177,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             //si valIzq es string devuleve string else number
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
+            if(valorIzq.tipo=="boolean" && String(valorIzq.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorIzq.valor+";\n";
+                valorIzq.valor=temporal;
+            }
+            if(valorDer.tipo=="boolean" && String(valorDer.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"="+valorDer.valor+";\n";
+                valorDer.valor=temporal;
+            }
             if(valorIzq.tipo=="number" && valorDer.tipo=="number"){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"+"+valorDer.valor+";\n";
@@ -1376,15 +1408,17 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 return {valor:temporal,tipo:"boolean"};*/
                 return {valor:valorIzq.valor+"=="+valorDer.valor,tipo:"boolean"};
             }else if(valorIzq.tipo=="string"  && valorDer.valor=="0" && valorDer.tipo!="number"/*el valor derecho es null */){
-                /*let temporal = nuevoTemporal();
-                consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
-                return {valor:temporal,tipo:"boolean"};*/
-                return {valor:valorIzq.valor+"=="+valorDer.valor,tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorIzq.valor+"];\n";
+                /*return {valor:temporal,tipo:"boolean"};*/
+                return {valor:temporal+"=="+valorDer.valor,tipo:"boolean"};
             }else if( valorIzq.valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */ && valorDer.tipo=="string" ){
                 /*let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"boolean"};*/
-                return {valor:valorIzq.valor+"=="+valorDer.valor,tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorDer.valor+"];\n";
+                return {valor:valorIzq.valor+"=="+temporal,tipo:"boolean"};
             }else if( valorIzq.valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */  && valorDer.valor=="0" && valorDer.tipo!="number"/*el valor derecho es null */){
                 /*let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"=="+valorDer.valor+";\n";
@@ -1437,12 +1471,16 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                 /*let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"boolean"};*/
-                return {valor:valorIzq.valor+"!="+valorDer.valor,tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorIzq.valor+"];\n";
+                return {valor:temporal+"!="+valorDer.valor,tipo:"boolean"};
             }else if( valorIzq.valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */ && valorDer.tipo=="string" ){
                 /*let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
                 return {valor:temporal,tipo:"boolean"};*/
-                return {valor:valorIzq.valor+"!="+valorDer.valor,tipo:"boolean"};
+                let temporal = nuevoTemporal();
+                consola.value+=temporal+"=heap[(int)"+valorDer.valor+"];\n";
+                return {valor:valorIzq.valor+"!="+temporal,tipo:"boolean"};
             }else if( valorIzq.valor=="0" && valorIzq.tipo!="number"/*el valor izquierdo es null */  && valorDer.valor=="0" && valorDer.tipo!="number"/*el valor derecho es null */){
                 /*let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+"!="+valorDer.valor+";\n";
@@ -1604,6 +1642,10 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
                     consola.value+=final+":\n";
                     return {valor:pos_temp,tipo:"boolean"};
                 }else{
+                    if(expresion.operandoIzq.tipo!=TIPO_OPERACION.AND&&expresion.operandoIzq.tipo!=TIPO_OPERACION.NOT&&expresion.operandoIzq.tipo!=TIPO_OPERACION.OR){
+                        consola.value+="if("+valorIzq.valor+") goto "+tempFalso+";\n";
+                        consola.value+="goto "+tempVerdadero+";\n";
+                    }
                     return {verdadero:verdadero, falso:falso,tipo:"boolean"};            
                 }
             }else{
@@ -2573,7 +2615,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         //funcion para imprimir strings
         let text = "void imprimir(){\nL0: if(heap[(int)t0]!=-1) goto L1;\ngoto L4;\nL1: if(heap[(int)t0]>=299) goto L2;\nif(heap[(int)t0]<-1) goto L3;\nprintf(\"%c\", (char)heap[(int)t0]);\nt0=t0+1;\ngoto L0;\nL2:\nt1= heap[(int)t0];\nt2=t1-300;\nprintf(\"%f\",t2);\nt0=t0+1;\ngoto L0;\nL3:\nt1= heap[(int)t0];\nprintf(\"%f\",t1);\nt0=t0+1;\ngoto L0;\nL4:\nreturn;\n}\n";
         //función para concatenar 2 strings
-        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2: if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
+        text+="//t1 y t3 son el inicio de las cadenas\nvoid concatenar(){\nL0:\nif(heap[(int)t1]!=-1) goto L1;\ngoto L2;\nL1:\nt2=heap[(int)t1];\nheap[(int)h]=t2;\nh=h+1;\nt1=t1+1;\ngoto L0;\nL2:\n if(heap[(int)t3]!=-1) goto L3;\ngoto L4;\n";
         text+="L3:\nt2=heap[(int)t3];\nheap[(int)h]=t2;\nh=h+1;\nt3=t3+1;\ngoto L2;\nL4:\nheap[(int)h]=-1;\nh=h+1;\nreturn;\n}\n";
         //funcion para calcular el length de strings
         text+="//t4 es la cadena \nvoid strLength(){\nL0:\nif(heap[(int)t4]!=-1) goto L1;\ngoto L2;\nL1:\nt4=t4+1;\ngoto L0;\nL2:\n return;\n}\n";
@@ -2696,13 +2738,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         return contador;
     }
     function procesarNewArray(largo, tablaDeSimbolos, ambito, userType){
-
         consola.value+="//comienza arreglo newArray\n";
         let valor = procesarExpresionNumerica(largo, tablaDeSimbolos, ambito, userType);
         let tamanio=0,temporales=[],arrayHead=contadores.temporales+1;
         temporales.push(nuevoTemporal());
         consola.value+=temporales[tamanio]+"=h;\n";
-        consola.value+="h=h+1;\n"
+        consola.value+="h=h+1;\n";
         tamanio++;
         for(let i =0;i<valor.valor;i++){
             temporales.push(nuevoTemporal());
@@ -2713,7 +2754,13 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         consola.value+="heap[(int)"+temporales[0]+"]="+(tamanio-1)+";\n";
         tamanio=1;
         for(let i =0;i<valor.valor;i++){
-            consola.value+="heap[(int)"+temporales[tamanio]+"]=0;\n";
+            let temporal = 0;
+            if(userType.split("[]")[0]!="number" && userType.split("[]")[0]!="boolean"){
+                temporal = nuevoTemporal();
+                consola.value+=temporal+"=h;\nh=h+1;\n";
+                consola.value+="heap[(int)"+temporal+"]=0;\n";
+            }
+            consola.value+="heap[(int)"+temporales[tamanio]+"]="+temporal+";\n";
             tamanio++;
         }
         return {tipo:"newArray_"+userType, valor:"t"+arrayHead, direcciones:temporales[0]};
