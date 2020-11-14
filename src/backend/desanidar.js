@@ -101,8 +101,7 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
             if(temp!=instruccion) output+=",";
                 if(temp.data_type==="infer"){
                     output+=temp.id; 
-                    tablaDeSimbolos.agregar(instruccion.variable_type,temp.id, "undefined", "undefined", ambito, temp.fila, temp.columna);
-            
+                    tablaDeSimbolos.agregar(instruccion.variable_type,temp.id, "undefined", ambito, temp.fila, temp.columna, "undefined");            
                 }else{                
                     output+=temp.id+":"+Data_Type(temp.data_type);
                     if(temp.isArray!=false){
@@ -112,7 +111,7 @@ export default function Desanidar(salida, consola, traduccion, tablaDeSalida){
                             temporal=temporal.next_dimension;
                         }
                     } 
-                    tablaDeSimbolos.agregar(instruccion.variable_type,temp.id, {tipo:Data_Type(temp.data_type), isArray:temp.isArray}, "undefined", ambito, temp.fila, temp.columna);
+                    tablaDeSimbolos.agregar(instruccion.variable_type,temp.id, {tipo:Data_Type(temp.data_type), isArray:temp.isArray}, ambito, temp.fila, temp.columna, "undefined");
             
                 }
             if(temp.expresion!="undefined"){

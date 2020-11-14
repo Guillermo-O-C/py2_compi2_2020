@@ -186,13 +186,14 @@ export default function UI() {
         var celda2 = row.insertCell(1);
         var celda3 = row.insertCell(2);
         var celda4 = row.insertCell(3);
-        var celda6 = row.insertCell(4);
-        var celda7 = row.insertCell(5);
+        var celda5 = row.insertCell(4);
+        var celda6 = row.insertCell(5);
         celda1.innerHTML = i;
         celda2.innerHTML = simbolo.si;
         celda3.innerHTML = simbolo.id;
-        celda5.innerHTML = simbolo.fila;
-        celda6.innerHTML = simbolo.columna;
+        celda4.innerHTML = simbolo.fila;
+        celda5.innerHTML = simbolo.columna;
+        celda6.innerHTML = simbolo.ambito;
       }
       }
     }
