@@ -304,7 +304,7 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             throw '>ERROR:  No se puede asignar a ' + instruccion.id.id+' porque es una constante.\n';   
         }
         let assignedValue = procesarExpresionNumerica(instruccion.expresion, tablaDeSimbolos, ambito, principalValue.tipo);
-        if(String(assignedValue.valor).match(/(<|<=|>|>=|!=|==)/)!=null && assignedValue.tipo=="boolean"){
+        if(String(assignedValue.valor).match(/(<=|<|>=|>|!=|==)/g)!=null && assignedValue.tipo=="boolean"){
             let temp = nuevoTemporal();
             consola.value+=temp+"="+assignedValue.valor+";\n";
             assignedValue.valor=temp;
@@ -452,12 +452,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             //si valIzq es string devuleve string else number
             const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if(valorIzq.valor[0].tipo=="boolean" && String(valorIzq.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(valorIzq.valor[0].tipo=="boolean" && String(valorIzq.valor[0].valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+";\n";
                 valorIzq.valor[0].valor=temporal;
             }
-            if(valorDer.valor[0].tipo=="boolean" && String(valorDer.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(valorDer.valor[0].tipo=="boolean" && String(valorDer.valor[0].valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorDer.valor[0].valor+";\n";
                 valorDer.valor[0].valor=temporal;
@@ -623,12 +623,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_OPERACION.IGUAL_IGUAL) {
             const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if(String(valorIzq.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorIzq.valor[0].valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+";\n";
                 valorIzq.valor=temporal;
             }
-            if(String(valorDer.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorDer.valor[0].valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorDer.valor[0].valor+";\n";
                 valorDer.valor=temporal;
@@ -705,12 +705,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_OPERACION.DISTINTO) {
             const valorIzq = procesarTexto(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarTexto(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if(String(valorIzq.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorIzq.valor[0].valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor[0].valor+";\n";
                 valorIzq.valor=temporal;
             }
-            if(String(valorDer.valor[0].valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorDer.valor[0].valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorDer.valor[0].valor+";\n";
                 valorDer.valor=temporal;
@@ -1186,12 +1186,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
             //si valIzq es string devuleve string else number
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if(valorIzq.tipo=="boolean" && String(valorIzq.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(valorIzq.tipo=="boolean" && String(valorIzq.valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+";\n";
                 valorIzq.valor=temporal;
             }
-            if(valorDer.tipo=="boolean" && String(valorDer.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(valorDer.tipo=="boolean" && String(valorDer.valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorDer.valor+";\n";
                 valorDer.valor=temporal;
@@ -1361,12 +1361,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_OPERACION.IGUAL_IGUAL) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if(String(valorIzq.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorIzq.valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+";\n";
                 valorIzq.valor=temporal;
             }
-            if(String(valorDer.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorDer.valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorDer.valor+";\n";
                 valorDer.valor=temporal;
@@ -1440,12 +1440,12 @@ export default function Traucir(salida, consola, traduccion, printedTable, table
         } else if (expresion.tipo === TIPO_OPERACION.DISTINTO) {
             const valorIzq = procesarExpresionNumerica(expresion.operandoIzq, tablaDeSimbolos, ambito);
             const valorDer = procesarExpresionNumerica(expresion.operandoDer, tablaDeSimbolos, ambito);
-            if(String(valorIzq.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorIzq.valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorIzq.valor+";\n";
                 valorIzq.valor=temporal;
             }
-            if(String(valorDer.valor).match(/(<|<=|>|>=|!=|==)/g)!=null){
+            if(String(valorDer.valor).match(/(<=|<|>=|>|!=|==)/g)!=null){
                 let temporal = nuevoTemporal();
                 consola.value+=temporal+"="+valorDer.valor+";\n";
                 valorDer.valor=temporal;

@@ -104,15 +104,15 @@ export default function Optimizar(consola, printedTable, tablero){
                                 printedTable.opt.push({regla:1, eliminado:"codigo eliminado de la línea "+(Number(line)+1)+" hasta "+(salto)+".", agregado:'', fila:line});
                             }
                         }                    
-                    }else if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<|<=|>|>=|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
-                        if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<|<=|>|>=|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
+                    }else if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<=|<|>=|>|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
+                        if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<=|<|>=|>|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
                             if(String(codigo[Number(line)+1]).match(/goto(\s)+L(\d)+/g)!=null){//nextLine is goto
                                 let valIzq, valDer, op;
                                 valIzq=String(codigo[line]).match(/\((\s)*\d+/g)[0];
                                 valIzq=String(valIzq).replace(/\(/, '');
                                 valDer=String(codigo[line]).match(/\d+(\s)*\)/g)[0];
                                 valDer=String(valDer).replace(/\)/, '');
-                                op= String(codigo[line]).match(/(<|<=|>|>=|!=|==)/)[0];
+                                op= String(codigo[line]).match(/(<=|<|>=|>|!=|==)/g)[0];
                                 let result;
                                 switch(op){
                                     case '<':
@@ -195,15 +195,15 @@ export default function Optimizar(consola, printedTable, tablero){
                                 printedTable.opt.push({regla:1, eliminado:"codigo eliminado de la línea "+(Number(line)+1)+" hasta "+(salto)+".", agregado:'', fila:line});
                             }
                         }                    
-                    }else if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<|<=|>|>=|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
-                        if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<|<=|>|>=|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
+                    }else if(String(codigo[line]).match(/if/g)!=null && String(codigo[line]).match(/(<=|<|>=|>|!=|==)/g)!=null && String(codigo[line]).match(/goto(\s)*L(\d)+/g)!=null){//un if con rel y goto
+                        if(String(codigo[line]).match(/\((\s)*\d+(\s)*(<=|<|>=|>|!=|==)(\s)*\d+(\s)*\)/g)!=null){//rel entre constantes
                             if(String(codigo[Number(line)+1]).match(/goto(\s)+L(\d)+/g)!=null){//nextLine is goto
                                 let valIzq, valDer, op;
                                 valIzq=String(codigo[line]).match(/\((\s)*\d+/g)[0];
                                 valIzq=String(valIzq).replace(/\(/, '');
                                 valDer=String(codigo[line]).match(/\d+(\s)*\)/g)[0];
                                 valDer=String(valDer).replace(/\)/, '');
-                                op= String(codigo[line]).match(/(<|<=|>|>=|!=|==)/)[0];
+                                op= String(codigo[line]).match(/(<=|<|>=|>|!=|==)/g)[0];
                                 let result;
                                 switch(op){
                                     case '<':
